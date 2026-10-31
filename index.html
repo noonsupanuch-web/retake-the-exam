@@ -125,7 +125,7 @@
                         </div>
                     </div>
                     
-                    <form id="resolutionForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+                    <form id="resolutionForm" onsubmit="handleFormSubmit(event)" class="space-y-6" autocomplete="on">
                         <div class="col-span-1 md:col-span-2 bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm">
                             <label class="block text-sm font-bold text-blue-900 mb-2">รูปแบบการดำเนินการ <span class="text-red-500">*</span></label>
                             <div class="flex flex-col sm:flex-row gap-4 mt-2">
@@ -144,38 +144,38 @@
                         <div id="normalFormSection" class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                                 <div class="md:col-span-2">
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1">ปีการศึกษา <span class="text-red-500">*</span></label>
-                                    <select id="input-academicYear" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="2569">2569</option>
-                                        <option value="2568">2568</option>
-                                    </select>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">รหัสนักเรียน <span class="text-red-500">*</span> <span class="text-xs text-blue-500 font-normal ml-1">(พิมพ์แล้วกด Enter เพื่อดึงข้อมูล)</span></label>
+                                    <input type="text" id="input-studentId" name="studentId" onchange="autofillNormalForm()" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 65001" autocomplete="on">
                                 </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">ภาคเรียน <span class="text-red-500">*</span></label>
-                                    <select id="input-term" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <select id="input-term" name="term" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                         <option value="1">1</option>
                                         <option value="2">2</option>
                                     </select>
                                 </div>
                                 <div class="md:col-span-2">
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1">รหัสนักเรียน <span class="text-red-500">*</span></label>
-                                    <input type="text" id="input-studentId" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 65001">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">ปีการศึกษา <span class="text-red-500">*</span></label>
+                                    <select id="input-academicYear" name="academicYear" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="2569">2569</option>
+                                        <option value="2568">2568</option>
+                                    </select>
                                 </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
-                                    <input type="text" id="input-studentName" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ระบุชื่อ-นามสกุล">
+                                    <input type="text" id="input-studentName" name="studentName" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ระบุชื่อ-นามสกุล" autocomplete="on">
                                 </div>
                                 <div class="md:col-span-1">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">ระดับชั้น/ห้อง <span class="text-red-500">*</span></label>
-                                    <input type="text" id="input-gradeLevel" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น ม.1/1">
+                                    <input type="text" id="input-gradeLevel" name="gradeLevel" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น ม.1/1" autocomplete="on">
                                 </div>
                                 <div class="md:col-span-1">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">เลขที่ <span class="text-red-500">*</span></label>
-                                    <input type="number" id="input-studentNumber" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 1">
+                                    <input type="number" id="input-studentNumber" name="studentNumber" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 1" autocomplete="on">
                                 </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">กลุ่มสาระการเรียนรู้ <span class="text-red-500">*</span></label>
-                                    <select id="input-department" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <select id="input-department" name="department" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                         <option value="คณิตศาสตร์">คณิตศาสตร์</option>
                                         <option value="วิทยาศาสตร์และเทคโนโลยี">วิทยาศาสตร์และเทคโนโลยี</option>
                                         <option value="ภาษาไทย">ภาษาไทย</option>
@@ -189,11 +189,11 @@
                                 </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">รายวิชา <span class="text-red-500">*</span></label>
-                                    <input type="text" id="input-subject" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น คณิตศาสตร์ (ค21101)">
+                                    <input type="text" id="input-subject" name="subject" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น คณิตศาสตร์ (ค21101)" autocomplete="on">
                                 </div>
                                 <div class="md:col-span-1">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">ประเภทที่แก้ <span class="text-red-500">*</span></label>
-                                    <select id="input-type" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <select id="input-type" name="type" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                         <option value="0">0 (ศูนย์)</option>
                                         <option value="ร">ร (รอการตัดสิน)</option>
                                         <option value="มส">มส (ไม่มีสิทธิ์สอบ)</option>
@@ -203,7 +203,7 @@
                                 <div class="md:col-span-1">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">เกรดที่ได้ <span class="text-red-500">*</span></label>
                                     <!-- เกรดที่ได้มีแค่ 1 และ ผ -->
-                                    <select id="input-newGrade" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <select id="input-newGrade" name="newGrade" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                         <option value="" disabled selected>-- เลือกเกรด --</option>
                                         <option value="1">1</option>
                                         <option value="ผ">ผ (ผ่าน)</option>
@@ -211,7 +211,7 @@
                                 </div>
                                 <div class="col-span-1 md:col-span-4">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">หมายเหตุ <span class="text-xs font-normal text-red-500 ml-1">(หากได้เกรดอื่นๆ หรือ 1.5 - 4 ให้ใส่เกรดที่ได้ตรงหมายเหตุ และโทรแจ้งงานวัดผลโดยตรง)</span></label>
-                                    <input type="text" id="input-remarks" class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="ระบุเพิ่มเติม (ถ้ามี)">
+                                    <input type="text" id="input-remarks" name="remarks" class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="ระบุเพิ่มเติม (ถ้ามี)" autocomplete="on">
                                 </div>
                             </div>
                         </div>
@@ -228,7 +228,7 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">ภาคเรียนที่ <span class="text-red-500">*</span></label>
-                                        <select id="retake-term" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                        <select id="retake-term" name="retakeTerm" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
                                             <option value="">เลือกภาคเรียน</option>
                                             <option value="1">1</option>
                                             <option value="2">2</option>
@@ -236,28 +236,28 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">ปีการศึกษา <span class="text-red-500">*</span></label>
-                                        <input type="number" id="retake-academicYear" data-req="true" placeholder="เช่น 2569" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อ-นามสกุล นักเรียน <span class="text-red-500">*</span></label>
-                                        <input type="text" id="retake-studentName" data-req="true" placeholder="ด.ช. / ด.ญ. / นาย / นางสาว" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                        <input type="number" id="retake-academicYear" name="retakeAcademicYear" data-req="true" placeholder="เช่น 2569" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" autocomplete="on">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">เลขประจำตัว <span class="text-red-500">*</span></label>
-                                        <input type="text" id="retake-studentId" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">เลขประจำตัว <span class="text-red-500">*</span> <span class="text-xs text-blue-500 font-normal ml-1">(พิมพ์แล้วกด Enter)</span></label>
+                                        <input type="text" id="retake-studentId" name="retakeStudentId" onchange="autofillRetakeForm()" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="เช่น 65001" autocomplete="on">
                                     </div>
-                                    <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อ-นามสกุล นักเรียน <span class="text-red-500">*</span></label>
+                                        <input type="text" id="retake-studentName" name="retakeStudentName" data-req="true" placeholder="ด.ช. / ด.ญ. / นาย / นางสาว" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" autocomplete="on">
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2 md:col-span-2">
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-1">ชั้น <span class="text-red-500">*</span></label>
-                                            <input type="text" id="retake-grade" data-req="true" placeholder="เช่น ม.4" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                            <input type="text" id="retake-grade" name="retakeGrade" data-req="true" placeholder="เช่น ม.4" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" autocomplete="on">
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-1">ห้อง <span class="text-red-500">*</span></label>
-                                            <input type="text" id="retake-room" data-req="true" placeholder="เช่น 1" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                            <input type="text" id="retake-room" name="retakeRoom" data-req="true" placeholder="เช่น 1" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" autocomplete="on">
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-1">เลขที่ <span class="text-red-500">*</span></label>
-                                            <input type="number" id="retake-studentNumber" data-req="true" placeholder="เช่น 5" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                            <input type="number" id="retake-studentNumber" name="retakeStudentNumber" data-req="true" placeholder="เช่น 5" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" autocomplete="on">
                                         </div>
                                     </div>
                                 </div>
@@ -268,11 +268,11 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div class="md:col-span-2">
                                         <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อวิชา (และรหัสวิชา) <span class="text-red-500">*</span></label>
-                                        <input type="text" id="retake-subject" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="เช่น คณิตศาสตร์พื้นฐาน (ค21101)">
+                                        <input type="text" id="retake-subject" name="retakeSubject" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="เช่น คณิตศาสตร์พื้นฐาน (ค21101)" autocomplete="on">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">กลุ่มสาระการเรียนรู้ <span class="text-red-500">*</span></label>
-                                        <select id="retake-department" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                        <select id="retake-department" name="retakeDepartment" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
                                             <option value="" disabled selected>-- เลือกกลุ่มสาระ --</option>
                                             <option value="คณิตศาสตร์">คณิตศาสตร์</option>
                                             <option value="วิทยาศาสตร์และเทคโนโลยี">วิทยาศาสตร์และเทคโนโลยี</option>
@@ -287,7 +287,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทที่แก้ <span class="text-red-500">*</span></label>
-                                        <select id="retake-type" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                        <select id="retake-type" name="retakeType" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
                                             <option value="" disabled selected>-- เลือกประเภท --</option>
                                             <option value="0">0 (ศูนย์)</option>
                                             <option value="ร">ร (รอการตัดสิน)</option>
@@ -304,16 +304,16 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">สรุปการเข้าเรียนซ้ำ (%) <span class="text-red-500">*</span></label>
-                                        <input type="number" id="retake-attendance" data-req="true" min="80" max="100" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="ต้อง 80% ขึ้นไป">
+                                        <input type="number" id="retake-attendance" name="retakeAttendance" data-req="true" min="80" max="100" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="ต้อง 80% ขึ้นไป" autocomplete="on">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">คะแนนที่ได้ (ต้องผ่าน 50 คะแนน) <span class="text-red-500">*</span></label>
-                                        <input type="number" id="retake-score" data-req="true" min="50" max="100" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="ระบุคะแนน">
+                                        <input type="number" id="retake-score" name="retakeScore" data-req="true" min="50" max="100" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="ระบุคะแนน" autocomplete="on">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">เกรดที่ได้หลังลงเรียนซ้ำ <span class="text-red-500">*</span></label>
                                         <!-- เกรดที่ได้มีแค่ 1 และ ผ -->
-                                        <select id="retake-newGrade" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                        <select id="retake-newGrade" name="retakeNewGrade" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
                                             <option value="" disabled selected>-- เลือกเกรด --</option>
                                             <option value="1">1</option>
                                             <option value="ผ">ผ (ผ่าน)</option>
@@ -321,7 +321,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ <span class="text-xs font-normal text-red-500 ml-1">(หากมีข้อสังเกตเพิ่มเติม)</span></label>
-                                        <input type="text" id="retake-remarks" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="ระบุเพิ่มเติม (ถ้ามี)">
+                                        <input type="text" id="retake-remarks" name="retakeRemarks" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="ระบุเพิ่มเติม (ถ้ามี)" autocomplete="on">
                                     </div>
                                 </div>
                             </div>
@@ -357,6 +357,7 @@
                                     <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">แก้ -> ผลใหม่</th>
                                     <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">รูปแบบการดำเนินการ</th>
                                     <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">สถานะ</th>
+                                    <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200" id="teacherTableBody">
@@ -384,6 +385,9 @@
                         </button>
                         <button onclick="switchTab('admin', 'analytics')" id="tab-admin-analytics" class="tab-inactive flex-1 py-4 px-4 text-center text-sm font-bold transition-colors duration-200 whitespace-nowrap">
                             <i class="fas fa-chart-line mr-2 text-purple-600"></i>แดชบอร์ดสถิติ
+                        </button>
+                        <button onclick="switchTab('admin', 'settings')" id="tab-admin-settings" class="tab-inactive flex-1 py-4 px-4 text-center text-sm font-bold transition-colors duration-200 whitespace-nowrap border-l border-gray-200">
+                            <i class="fas fa-cog mr-2 text-gray-600"></i>ตั้งค่าระบบ
                         </button>
                     </nav>
                 </div>
@@ -464,6 +468,7 @@
                                     <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ -> ผลใหม่</th>
                                     <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">รูปแบบ</th>
                                     <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">สถานะ</th>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200" id="adminHistoryTableBody"></tbody>
@@ -589,6 +594,35 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="content-admin-settings" class="hidden p-6 md:p-8 animate-fade-in bg-gray-50/50">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 border-l-4 border-gray-500 pl-4 gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">ตั้งค่าระบบ (System Settings)</h2>
+                            <p class="text-sm text-gray-500">จัดการฐานข้อมูลรายชื่อนักเรียนสำหรับการกรอกข้อมูลอัตโนมัติ</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-3xl">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-database text-blue-500 mr-2"></i> ฐานข้อมูลรายชื่อนักเรียน (Autofill)</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">ลิงก์ Google Sheets (URL)</label>
+                                <input type="text" id="adminSheetUrl" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://docs.google.com/spreadsheets/d/.../edit?gid=...">
+                                <p class="text-xs text-gray-500 mt-1">ตั้งค่าการแชร์ไฟล์เป็น <span class="font-bold text-green-600">"ทุกคนที่มีลิงก์ (Anyone with the link) -> ผู้มีสิทธิ์อ่าน (Viewer)"</span> โดยระบบจะดึงจาก ชื่อ-นามสกุล, เลขประจำตัว, ชั้น, ห้อง, เลขที่</p>
+                            </div>
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-2 gap-4">
+                                <div class="text-sm">
+                                    <span class="font-bold text-gray-700">สถานะข้อมูล:</span> 
+                                    <span id="studentDbStatus" class="font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 shadow-sm ml-1">โหลดข้อมูล...</span>
+                                </div>
+                                <button onclick="syncStudentData()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center transition-colors">
+                                    <i class="fas fa-sync-alt mr-2"></i> ดึงข้อมูล / อัปเดตฐานข้อมูล
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -649,6 +683,138 @@
         const todayStr = new Date().toISOString().substring(0, 10);
         const STORAGE_KEY = 'grade_resolution_system_data';
         const ADMIN_PASSWORD = 'noon@admin456';
+        
+        // --- ส่วนระบบ Autofill จาก Google Sheets ---
+        let studentDB = JSON.parse(localStorage.getItem('student_db_cache')) || [];
+        let defaultSheetUrl = 'https://docs.google.com/spreadsheets/d/1wN_qcHFc6Th7huxkmG8RDna41VKJuAps/edit?gid=1349736231#gid=1349736231';
+        let savedSheetUrl = localStorage.getItem('student_sheet_url') || defaultSheetUrl;
+        
+        async function syncStudentData(isAuto = false) {
+            let urlToFetch = savedSheetUrl;
+            if(!isAuto) {
+                const inputVal = document.getElementById('adminSheetUrl').value.trim();
+                if(!inputVal) {
+                    Swal.fire('ข้อผิดพลาด', 'กรุณาระบุ URL ของ Google Sheets', 'error');
+                    return;
+                }
+                urlToFetch = inputVal;
+                
+                Swal.fire({
+                    title: 'กำลังดึงข้อมูล...',
+                    text: 'กรุณารอสักครู่ระบบกำลังเชื่อมต่อ Google Sheets',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+            }
+
+            try {
+                const sheetIdMatch = urlToFetch.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                const gidMatch = urlToFetch.match(/[#&?]gid=([0-9]+)/);
+                
+                if(!sheetIdMatch) throw new Error('รูปแบบ URL ไม่ถูกต้อง ไม่พบ Sheet ID');
+                
+                const sheetId = sheetIdMatch[1];
+                const gid = gidMatch ? gidMatch[1] : '0';
+                
+                const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+                const res = await fetch(exportUrl);
+                if(!res.ok) throw new Error('ไม่สามารถเข้าถึงไฟล์ได้ (ตรวจสอบสิทธิ์การแชร์)');
+                
+                const csvText = await res.text();
+                
+                // แยกแถวและคอลัมน์แบบง่าย (รองรับ comma ในเครื่องหมายคำพูด)
+                const rows = csvText.split(/\r?\n/).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+                if(rows.length < 2) throw new Error('ไม่พบข้อมูลในไฟล์ (หรือไฟล์ว่างเปล่า)');
+                
+                const headers = rows[0].map(h => h ? h.replace(/"/g, '').trim() : '');
+                
+                // ค้นหาตำแหน่งคอลัมน์จาก Header
+                let idIdx = -1, nameIdx = -1, gradeIdx = -1, roomIdx = -1, noIdx = -1;
+                headers.forEach((h, i) => {
+                    if(h.includes('เลขประจำตัว') || h.includes('รหัส')) idIdx = i;
+                    else if(h.includes('ชื่อ') || h.includes('นามสกุล')) nameIdx = i;
+                    else if(h.includes('ชั้น') || h.includes('ระดับ')) gradeIdx = i;
+                    else if(h.includes('ห้อง')) roomIdx = i;
+                    else if(h.includes('เลขที่')) noIdx = i;
+                });
+                
+                if(idIdx === -1) idIdx = 0; 
+                if(nameIdx === -1) nameIdx = 1;
+                
+                studentDB = rows.slice(1).map(row => {
+                    if(!row || row.length <= idIdx) return null;
+                    return {
+                        id: row[idIdx] ? row[idIdx].replace(/"/g, '').trim() : '',
+                        name: nameIdx !== -1 && row[nameIdx] ? row[nameIdx].replace(/"/g, '').trim() : '',
+                        grade: gradeIdx !== -1 && row[gradeIdx] ? row[gradeIdx].replace(/"/g, '').trim() : '',
+                        room: roomIdx !== -1 && row[roomIdx] ? row[roomIdx].replace(/"/g, '').trim() : '',
+                        number: noIdx !== -1 && row[noIdx] ? row[noIdx].replace(/"/g, '').trim() : ''
+                    }
+                }).filter(item => item && item.id !== '');
+                
+                localStorage.setItem('student_db_cache', JSON.stringify(studentDB));
+                
+                if(!isAuto) {
+                    savedSheetUrl = urlToFetch;
+                    localStorage.setItem('student_sheet_url', savedSheetUrl);
+                    updateSettingsUI();
+                    Swal.fire('สำเร็จ!', `อัปเดตข้อมูลนักเรียน ${studentDB.length} คน เรียบร้อยแล้ว`, 'success');
+                }
+                console.log(`โหลดข้อมูลนักเรียนสำเร็จจำนวน ${studentDB.length} รายการ`);
+            } catch(e) {
+                console.warn("ไม่สามารถโหลดข้อมูลนักเรียนจาก Google Sheets ได้:", e);
+                if(!isAuto) {
+                    Swal.fire('เกิดข้อผิดพลาด', e.message || 'ไม่สามารถดึงข้อมูลได้', 'error');
+                }
+            }
+        }
+
+        function updateSettingsUI() {
+            const urlInput = document.getElementById('adminSheetUrl');
+            const statusText = document.getElementById('studentDbStatus');
+            if(urlInput) urlInput.value = savedSheetUrl;
+            if(statusText) statusText.innerText = `มีข้อมูลนักเรียน ${studentDB.length} คน`;
+        }
+
+        async function initStudentData() {
+            if (studentDB.length === 0) {
+                await syncStudentData(true);
+            }
+        }
+
+        function autofillNormalForm() {
+            const sid = document.getElementById('input-studentId').value.trim();
+            if(!sid) return;
+            const student = studentDB.find(s => s.id === sid);
+            if(student) {
+                document.getElementById('input-studentName').value = student.name || '';
+                let gradeLevel = student.grade || '';
+                if (student.room) gradeLevel += '/' + student.room;
+                if (gradeLevel) document.getElementById('input-gradeLevel').value = gradeLevel;
+                document.getElementById('input-studentNumber').value = student.number || '';
+                
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'พบข้อมูลและเติมอัตโนมัติแล้ว', showConfirmButton: false, timer: 2000 });
+            } else {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'ไม่พบรหัสนักเรียนนี้ในฐานข้อมูล', showConfirmButton: false, timer: 2000 });
+            }
+        }
+
+        function autofillRetakeForm() {
+            const sid = document.getElementById('retake-studentId').value.trim();
+            if(!sid) return;
+            const student = studentDB.find(s => s.id === sid);
+            if(student) {
+                document.getElementById('retake-studentName').value = student.name || '';
+                if(student.grade) document.getElementById('retake-grade').value = student.grade;
+                if(student.room) document.getElementById('retake-room').value = student.room;
+                document.getElementById('retake-studentNumber').value = student.number || '';
+                
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'พบข้อมูลและเติมอัตโนมัติแล้ว', showConfirmButton: false, timer: 2000 });
+            } else {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'ไม่พบรหัสนักเรียนนี้ในฐานข้อมูล', showConfirmButton: false, timer: 2000 });
+            }
+        }
+        // ----------------------------------------
         
         let defaultAppData = [
             { id: 1, date: todayStr, time: '09:15', academicYear: '2569', term: '1', department: 'คณิตศาสตร์', teacher: 'ครูสมปอง สุขใจ', studentId: '65012', studentName: 'ด.ช.วิชัย รักเรียน', gradeLevel: 'ม.1/1', studentNumber: '5', subject: 'คณิตศาสตร์ (ค21101)', type: '0', newGrade: '1', remarks: '', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'pending' },
@@ -785,6 +951,9 @@
                     populateAnalyticsSelectors();
                     updateCharts();
                 }
+                if(tabName === 'settings') {
+                    updateSettingsUI();
+                }
             }
         }
 
@@ -900,14 +1069,75 @@
             appData.push(newItem);
             saveData();
             
+            // บันทึกฟิลด์ที่ใช้บ่อย (Form State Memory)
+            saveLastUsedFields(formObj, selectedMethod);
+            
             Swal.fire({ title: 'บันทึกสำเร็จ!', text: 'ส่งข้อมูลให้งานวัดผลเรียบร้อย', icon: 'success', timer: 1500, showConfirmButton: false });
             document.getElementById('resolutionForm').reset();
             
-            document.querySelector('input[name="input-correctionMethod"][value="แก้เกรดเทอมที่ผ่านมา"]').checked = true;
+            // โหลดฟิลด์ที่ใช้บ่อยกลับมา เพื่อความรวดเร็วในการคีย์ข้อมูลต่อไป
+            loadLastUsedFields();
             toggleFormMode();
             
             renderApp();
             setTimeout(() => switchTab('teacher', 'history'), 500);
+        }
+
+        function saveLastUsedFields(obj, method) {
+            const lastUsed = {
+                method: method,
+                academicYear: obj.academicYear,
+                term: obj.term,
+                department: obj.department,
+                subject: obj.subject
+            };
+            localStorage.setItem('last_form_data', JSON.stringify(lastUsed));
+        }
+
+        function loadLastUsedFields() {
+            const lastUsed = JSON.parse(localStorage.getItem('last_form_data'));
+            if (lastUsed) {
+                if (document.getElementById('input-academicYear')) document.getElementById('input-academicYear').value = lastUsed.academicYear || '';
+                if (document.getElementById('input-term')) document.getElementById('input-term').value = lastUsed.term || '';
+                if (document.getElementById('input-department')) document.getElementById('input-department').value = lastUsed.department || '';
+                if (document.getElementById('input-subject')) document.getElementById('input-subject').value = lastUsed.subject || '';
+                
+                if (document.getElementById('retake-academicYear')) document.getElementById('retake-academicYear').value = lastUsed.academicYear || '';
+                if (document.getElementById('retake-term')) document.getElementById('retake-term').value = lastUsed.term || '';
+                if (document.getElementById('retake-department')) document.getElementById('retake-department').value = lastUsed.department || '';
+                if (document.getElementById('retake-subject')) document.getElementById('retake-subject').value = lastUsed.subject || '';
+                
+                if (lastUsed.method === 'ลงทะเบียนเรียนซ้ำ') {
+                    const r = document.querySelector('input[name="input-correctionMethod"][value="ลงทะเบียนเรียนซ้ำ"]');
+                    if(r) r.checked = true;
+                } else {
+                    const r = document.querySelector('input[name="input-correctionMethod"][value="แก้เกรดเทอมที่ผ่านมา"]');
+                    if(r) r.checked = true;
+                }
+            }
+        }
+
+        function deleteRecord(id) {
+            Swal.fire({
+                title: 'ยืนยันการลบข้อมูล?',
+                text: "ข้อมูลนี้จะถูกลบอย่างถาวร ไม่สามารถกู้คืนได้!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ใช่, ลบเลย!',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    appData = appData.filter(item => item.id !== id);
+                    saveData();
+                    renderApp(); 
+                    if(!document.getElementById('content-admin-analytics').classList.contains('hidden')) updateCharts();
+                    if(!document.getElementById('content-admin-reports').classList.contains('hidden')) generateReport();
+                    
+                    Swal.fire({ title: 'ลบแล้ว!', text: 'ข้อมูลถูกลบเรียบร้อยแล้ว', icon: 'success', timer: 1500, showConfirmButton: false });
+                }
+            });
         }
 
         function handleApproval(id, newStatus) {
@@ -940,7 +1170,7 @@
             if(!tbody) return;
             const myData = appData.filter(d => d.teacher === currentTeacherName).sort((a,b) => b.id - a.id);
             if(!myData.length) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">ยังไม่มีประวัติการส่งข้อมูล</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">ยังไม่มีประวัติการส่งข้อมูล</td></tr>`;
                 return;
             }
             tbody.innerHTML = myData.map(item => `
@@ -957,15 +1187,24 @@
                     </td>
                     <td class="px-6 py-4 text-center">${getMethodBadge(item.correctionMethod)}</td>
                     <td class="px-6 py-4 text-center">${getStatusBadge(item.status)}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="deleteRecord(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="ลบรายการ"><i class="fas fa-trash-alt"></i></button>
+                    </td>
                 </tr>
             `).join('');
         }
 
         function renderHomeroomTable() {
-            const roomQuery = document.getElementById('homeroomSelect').value;
-            const textQuery = document.getElementById('searchInput').value.toLowerCase();
+            const selectEl = document.getElementById('homeroomSelect');
+            const searchEl = document.getElementById('searchInput');
             const tbody = document.getElementById('homeroomTableBody');
-            if(!tbody) return;
+            
+            // ป้องกัน Error หากไม่มีกล่องค้นหาหรือตารางในหน้า
+            if (!selectEl || !searchEl || !tbody) return;
+
+            const roomQuery = selectEl.value;
+            const textQuery = searchEl.value.toLowerCase();
+            
             let filtered = appData;
             if(roomQuery) filtered = filtered.filter(d => d.gradeLevel === roomQuery);
             if(textQuery) filtered = filtered.filter(d => d.studentId.includes(textQuery) || d.studentName.toLowerCase().includes(textQuery));
@@ -1025,7 +1264,8 @@
                     <td class="px-4 py-3 text-center">${getMethodBadge(item.correctionMethod)}</td>
                     <td class="px-4 py-3 text-center whitespace-nowrap">
                         <button onclick="handleApproval(${item.id}, 'approved')" class="bg-green-100 hover:bg-green-600 text-green-700 hover:text-white border border-green-300 hover:border-green-600 p-2 rounded-lg transition-colors mr-1 shadow-sm" title="อนุมัติ"><i class="fas fa-check"></i></button>
-                        <button onclick="handleApproval(${item.id}, 'rejected')" class="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white border border-red-300 hover:border-red-600 p-2 rounded-lg transition-colors shadow-sm" title="ตีกลับ"><i class="fas fa-times"></i></button>
+                        <button onclick="handleApproval(${item.id}, 'rejected')" class="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white border border-red-300 hover:border-red-600 p-2 rounded-lg transition-colors mr-1 shadow-sm" title="ตีกลับ"><i class="fas fa-times"></i></button>
+                        <button onclick="deleteRecord(${item.id})" class="bg-gray-100 hover:bg-gray-600 text-gray-700 hover:text-white border border-gray-300 hover:border-gray-600 p-2 rounded-lg transition-colors shadow-sm" title="ลบ"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>
             `).join('');
@@ -1057,7 +1297,7 @@
             const tbody = document.getElementById('adminHistoryTableBody');
             if(!tbody) return;
             if(!filtered.length) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</td></tr>`;
                 return;
             }
             tbody.innerHTML = filtered.map(item => `
@@ -1082,6 +1322,9 @@
                     </td>
                     <td class="px-4 py-3 text-center">${getMethodBadge(item.correctionMethod)}</td>
                     <td class="px-4 py-3 text-center">${getStatusBadge(item.status)}</td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="deleteRecord(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="ลบรายการ"><i class="fas fa-trash-alt"></i></button>
+                    </td>
                 </tr>
             `).join('');
         }
@@ -1445,6 +1688,8 @@
 
         // Initialize App
         window.onload = function() {
+            initStudentData(); // โหลดข้อมูลหรือดึงจาก Google Sheets
+            loadLastUsedFields(); // โหลดค่าที่เคยกรอกในแบบฟอร์ม
             renderApp();
         };
     </script>
