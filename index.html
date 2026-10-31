@@ -89,7 +89,7 @@
                     <div class="hidden md:block text-sm font-medium">
                         สถานะ: <span id="currentRoleText" class="bg-blue-600 px-3 py-1 rounded-full shadow-inner border border-blue-500">คุณครู</span>
                     </div>
-                    <select id="roleSelector" onchange="switchRole(this.value)" class="bg-blue-800 hover:bg-blue-700 text-white text-sm rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent block p-2 border border-blue-600 outline-none transition-colors cursor-pointer font-medium shadow-sm">
+                    <select id="roleSelector" onchange="handleRoleSwitch(this.value)" class="bg-blue-800 hover:bg-blue-700 text-white text-sm rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent block p-2 border border-blue-600 outline-none transition-colors cursor-pointer font-medium shadow-sm">
                         <option value="teacher">👨‍🏫 มุมมอง: คุณครูผู้สอน</option>
                         <option value="admin">👨‍💻 มุมมอง: งานวัดผล (Admin)</option>
                     </select>
@@ -648,6 +648,7 @@
     <script>
         const todayStr = new Date().toISOString().substring(0, 10);
         const STORAGE_KEY = 'grade_resolution_system_data';
+        const ADMIN_PASSWORD = 'noon@admin456';
         
         let defaultAppData = [
             { id: 1, date: todayStr, time: '09:15', academicYear: '2569', term: '1', department: 'คณิตศาสตร์', teacher: 'ครูสมปอง สุขใจ', studentId: '65012', studentName: 'ด.ช.วิชัย รักเรียน', gradeLevel: 'ม.1/1', studentNumber: '5', subject: 'คณิตศาสตร์ (ค21101)', type: '0', newGrade: '1', remarks: '', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'pending' },
@@ -702,7 +703,50 @@
             }
         }
 
-        function switchRole(role) {
+        function handleRoleSwitch(role) {
+            if (role === 'admin') {
+                Swal.fire({
+                    title: 'กรุณาใส่รหัสผ่านแอดมิน',
+                    input: 'password',
+                    inputAttributes: {
+                        autocapitalize: 'off'
+                    },
+                    showCancelButton: true,
+                    confirmButtonText: 'เข้าสู่ระบบ',
+                    cancelButtonText: 'ยกเลิก',
+                    showLoaderOnConfirm: true,
+                    preConfirm: (password) => {
+                        if (password === ADMIN_PASSWORD) {
+                            return true;
+                        } else {
+                            Swal.showValidationMessage('รหัสผ่านไม่ถูกต้อง!');
+                            return false;
+                        }
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        changeRoleView('admin');
+                        Swal.fire({
+                            title: 'เข้าสู่ระบบสำเร็จ',
+                            icon: 'success',
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    } else {
+                        // User canceled or failed, revert to teacher
+                        document.getElementById('roleSelector').value = 'teacher';
+                        changeRoleView('teacher');
+                    }
+                });
+            } else {
+                changeRoleView('teacher');
+            }
+        }
+
+        function changeRoleView(role) {
             currentRole = role;
             const currentRoleText = document.getElementById('currentRoleText');
             
