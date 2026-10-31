@@ -622,6 +622,47 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6 w-full">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-user-plus text-green-500 mr-2"></i> จัดการข้อมูลนักเรียนในระบบ และแสดงรายชื่อ</h3>
+                        
+                        <form id="addStudentForm" onsubmit="handleAddStudent(event)" class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                            <div class="md:col-span-1"><label class="block text-xs font-bold text-gray-700 mb-1">เลขประจำตัว <span class="text-red-500">*</span></label><input type="text" id="addStuId" required class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                            <div class="md:col-span-2"><label class="block text-xs font-bold text-gray-700 mb-1">ชื่อ-นามสกุล <span class="text-red-500">*</span></label><input type="text" id="addStuName" required class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                            <div class="md:col-span-1"><label class="block text-xs font-bold text-gray-700 mb-1">ชั้น</label><input type="text" id="addStuGrade" placeholder="เช่น ม.1" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                            <div class="md:col-span-1"><label class="block text-xs font-bold text-gray-700 mb-1">ห้อง</label><input type="text" id="addStuRoom" placeholder="เช่น 1" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                            <div class="md:col-span-1">
+                                <label class="block text-xs font-bold text-gray-700 mb-1">เลขที่</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="addStuNo" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded font-bold shadow-sm transition-colors" title="เพิ่ม/อัปเดตนักเรียน"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-3">
+                            <h4 class="font-bold text-gray-700">รายชื่อนักเรียนทั้งหมดในระบบ (<span id="stuDbCount">0</span> คน)</h4>
+                            <div class="relative w-full sm:w-64">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-gray-400 text-sm"></i></div>
+                                <input type="text" id="searchStuDb" onkeyup="renderStudentDBTable()" placeholder="ค้นหารหัสนักเรียน, ชื่อ..." class="w-full text-sm pl-9 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                        
+                        <div class="table-container overflow-y-auto border border-gray-200 rounded-lg max-h-96 shadow-inner">
+                            <table class="min-w-full divide-y divide-gray-200 relative">
+                                <thead class="bg-gray-100 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">เลขประจำตัว</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">ชื่อ-นามสกุล</th>
+                                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">ชั้น/ห้อง</th>
+                                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">เลขที่</th>
+                                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100" id="studentDbTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -741,7 +782,7 @@
                 if(idIdx === -1) idIdx = 0; 
                 if(nameIdx === -1) nameIdx = 1;
                 
-                studentDB = rows.slice(1).map(row => {
+                const newStudents = rows.slice(1).map(row => {
                     if(!row || row.length <= idIdx) return null;
                     return {
                         id: row[idIdx] ? row[idIdx].replace(/"/g, '').trim() : '',
@@ -751,6 +792,14 @@
                         number: noIdx !== -1 && row[noIdx] ? row[noIdx].replace(/"/g, '').trim() : ''
                     }
                 }).filter(item => item && item.id !== '');
+
+                // นำข้อมูลใหม่มาผสานกับฐานข้อมูลเดิมในระบบ
+                let addedCount = 0, updatedCount = 0;
+                newStudents.forEach(ns => {
+                    const idx = studentDB.findIndex(s => s.id === ns.id);
+                    if(idx > -1) { studentDB[idx] = ns; updatedCount++; }
+                    else { studentDB.push(ns); addedCount++; }
+                });
                 
                 localStorage.setItem('student_db_cache', JSON.stringify(studentDB));
                 
@@ -758,7 +807,7 @@
                     savedSheetUrl = urlToFetch;
                     localStorage.setItem('student_sheet_url', savedSheetUrl);
                     updateSettingsUI();
-                    Swal.fire('สำเร็จ!', `อัปเดตข้อมูลนักเรียน ${studentDB.length} คน เรียบร้อยแล้ว`, 'success');
+                    Swal.fire('สำเร็จ!', `อัปเดตข้อมูลเสร็จสิ้น<br><span class="text-sm text-green-600">เพิ่มจากตาราง: ${addedCount} คน | อัปเดตข้อมูล: ${updatedCount} คน</span>`, 'success');
                 }
                 console.log(`โหลดข้อมูลนักเรียนสำเร็จจำนวน ${studentDB.length} รายการ`);
             } catch(e) {
@@ -774,6 +823,88 @@
             const statusText = document.getElementById('studentDbStatus');
             if(urlInput) urlInput.value = savedSheetUrl;
             if(statusText) statusText.innerText = `มีข้อมูลนักเรียน ${studentDB.length} คน`;
+            renderStudentDBTable();
+        }
+
+        function renderStudentDBTable() {
+            const query = document.getElementById('searchStuDb')?.value.toLowerCase() || '';
+            const tbody = document.getElementById('studentDbTableBody');
+            const countEl = document.getElementById('stuDbCount');
+            if(!tbody) return;
+            
+            let filtered = studentDB;
+            if(query) {
+                filtered = studentDB.filter(s => s.id.includes(query) || s.name.toLowerCase().includes(query));
+            }
+            if(countEl) countEl.innerText = studentDB.length;
+            
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-gray-500">ไม่พบรายชื่อนักเรียน</td></tr>`;
+                return;
+            }
+            
+            // แสดงแค่ 300 แถวเพื่อให้ไม่ค้าง หากต้องการค้นหาสามารถพิมพ์ค้นหาได้
+            const displayData = filtered.slice(0, 300); 
+            
+            tbody.innerHTML = displayData.map(s => `
+                <tr class="hover:bg-indigo-50/40">
+                    <td class="px-4 py-2 text-sm font-bold text-gray-800">${s.id}</td>
+                    <td class="px-4 py-2 text-sm text-gray-700">${s.name}</td>
+                    <td class="px-4 py-2 text-sm text-center text-gray-600 bg-gray-50">${s.grade || '-'}${s.room ? '/'+s.room : ''}</td>
+                    <td class="px-4 py-2 text-sm text-center text-gray-600">${s.number || '-'}</td>
+                    <td class="px-4 py-2 text-center">
+                        <button onclick="deleteStudentFromDB('${s.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded transition-colors" title="ลบนักเรียน"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            if(filtered.length > 300) {
+                tbody.innerHTML += `<tr><td colspan="5" class="text-center py-3 text-sm text-blue-500 bg-blue-50 font-bold border-t border-blue-100">แสดงเพียง 300 รายการ จากทั้งหมด ${filtered.length} รายการ (พิมพ์ค้นหารหัส/ชื่อเพื่อดูเพิ่มเติม)</td></tr>`;
+            }
+        }
+
+        function handleAddStudent(e) {
+            e.preventDefault();
+            const id = document.getElementById('addStuId').value.trim();
+            const name = document.getElementById('addStuName').value.trim();
+            const grade = document.getElementById('addStuGrade').value.trim();
+            const room = document.getElementById('addStuRoom').value.trim();
+            const no = document.getElementById('addStuNo').value.trim();
+            
+            const existingIdx = studentDB.findIndex(s => s.id === id);
+            const newStu = { id, name, grade, room, number: no };
+            
+            if(existingIdx > -1) {
+                studentDB[existingIdx] = newStu;
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'อัปเดตข้อมูลนักเรียนเรียบร้อย', showConfirmButton: false, timer: 1500 });
+            } else {
+                studentDB.unshift(newStu);
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'เพิ่มนักเรียนใหม่เรียบร้อย', showConfirmButton: false, timer: 1500 });
+            }
+            
+            localStorage.setItem('student_db_cache', JSON.stringify(studentDB));
+            e.target.reset();
+            updateSettingsUI();
+            document.getElementById('addStuId').focus();
+        }
+
+        function deleteStudentFromDB(id) {
+            Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: `ต้องการลบนักเรียนรหัส ${id} ออกจากระบบหรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ใช่, ลบเลย'
+            }).then((res) => {
+                if(res.isConfirmed) {
+                    studentDB = studentDB.filter(s => s.id !== id);
+                    localStorage.setItem('student_db_cache', JSON.stringify(studentDB));
+                    updateSettingsUI();
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'ลบเรียบร้อย', showConfirmButton: false, timer: 1500 });
+                }
+            });
         }
 
         async function initStudentData() {
