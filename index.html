@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกผลการแก้ 0 ร มส มผ</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Load FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Load Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .tab-active {
+            border-bottom: 3px solid #3b82f6;
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #eff6ff;
+        }
+        .tab-inactive {
+            color: #6b7280;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-inactive:hover {
+            color: #374151;
+            border-bottom: 3px solid #d1d5db;
+            background-color: #f9fafb;
+        }
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #content-admin-reports, #content-admin-reports * { visibility: visible; }
+            #content-admin-reports { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; border: none; box-shadow: none; }
+            .no-print { display: none !important; }
+            .shadow-sm, .shadow-md, .shadow-lg { box-shadow: none !important; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc !important; padding: 10px !important; }
+            .bg-gray-100 { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; }
+            .bg-gray-50 { background-color: #f9fafb !important; -webkit-print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased">
+
+    <nav class="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="bg-white text-blue-900 p-2 rounded-lg mr-3 shadow-sm">
+                        <i class="fas fa-graduation-cap text-xl"></i>
+                    </div>
+                    <span class="font-bold text-lg md:text-xl truncate tracking-wide">ระบบบริหารจัดการผลการเรียน (0, ร, มส, มผ)</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="hidden md:block text-sm font-medium">
+                        สถานะ: <span id="currentRoleText" class="bg-blue-600 px-3 py-1 rounded-full shadow-inner border border-blue-500">คุณครู</span>
+                    </div>
+                    <select id="roleSelector" onchange="switchRole(this.value)" class="bg-blue-800 hover:bg-blue-700 text-white text-sm rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent block p-2 border border-blue-600 outline-none transition-colors cursor-pointer font-medium shadow-sm">
+                        <option value="teacher">👨‍🏫 มุมมอง: คุณครูผู้สอน</option>
+                        <option value="admin">👨‍💻 มุมมอง: งานวัดผล (Admin)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- TEACHER VIEW -->
+        <div id="teacherView" class="block animate-fade-in">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8 border border-gray-100">
+                <div class="border-b border-gray-200 bg-gray-50/50">
+                    <nav class="flex -mb-px" aria-label="Tabs">
+                        <button onclick="switchTab('teacher', 'form')" id="tab-teacher-form" class="tab-active w-1/2 py-4 px-1 text-center text-sm font-medium transition-colors duration-200">
+                            <i class="fas fa-edit mr-2"></i>บันทึกผลการแก้
+                        </button>
+                        <button onclick="switchTab('teacher', 'history')" id="tab-teacher-history" class="tab-inactive w-1/2 py-4 px-1 text-center text-sm font-medium transition-colors duration-200">
+                            <i class="fas fa-history mr-2"></i>ประวัติการส่งของฉัน
+                        </button>
+                    </nav>
+                </div>
+
+                <div id="content-teacher-form" class="p-6 md:p-8">
+                    <div class="flex items-center mb-6">
+                        <div class="bg-blue-100 p-3 rounded-xl mr-4 text-blue-600 shadow-sm border border-blue-200">
+                            <i class="fas fa-file-signature text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">ฟอร์มบันทึกผลการแก้ 0, ร, มส, มผ</h2>
+                            <p class="text-sm text-gray-500">กรุณากรอกข้อมูลให้ครบถ้วนและแนบหลักฐาน</p>
+                        </div>
+                    </div>
+                    
+                    <form id="resolutionForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+                        <div class="col-span-1 md:col-span-2 bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm">
+                            <label class="block text-sm font-bold text-blue-900 mb-2">รูปแบบการดำเนินการ <span class="text-red-500">*</span></label>
+                            <div class="flex flex-col sm:flex-row gap-4 mt-2">
+                                <label class="flex items-center cursor-pointer p-3 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors w-full sm:w-1/2 shadow-sm">
+                                    <input type="radio" name="input-correctionMethod" value="แก้เกรดเทอมที่ผ่านมา" checked required onchange="toggleFormMode()" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500">
+                                    <span class="ml-2 text-sm font-medium text-gray-800"><i class="fas fa-history text-blue-500 mr-2"></i>แก้เกรดเทอมที่ผ่านมา</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer p-3 bg-white border border-gray-300 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors w-full sm:w-1/2 shadow-sm">
+                                    <input type="radio" name="input-correctionMethod" value="ลงทะเบียนเรียนซ้ำ" required onchange="toggleFormMode()" class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 focus:ring-purple-500">
+                                    <span class="ml-2 text-sm font-medium text-gray-800"><i class="fas fa-book-open text-purple-500 mr-2"></i>ลงทะเบียนเรียนซ้ำ</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- ฟอร์มแก้เกรดเทอมที่ผ่านมา -->
+                        <div id="normalFormSection" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">ปีการศึกษา <span class="text-red-500">*</span></label>
+                                    <select id="input-academicYear" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="2569">2569</option>
+                                        <option value="2568">2568</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">ภาคเรียน <span class="text-red-500">*</span></label>
+                                    <select id="input-term" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">รหัสนักเรียน <span class="text-red-500">*</span></label>
+                                    <input type="text" id="input-studentId" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 65001">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
+                                    <input type="text" id="input-studentName" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ระบุชื่อ-นามสกุล">
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">ระดับชั้น/ห้อง <span class="text-red-500">*</span></label>
+                                    <input type="text" id="input-gradeLevel" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น ม.1/1">
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">เลขที่ <span class="text-red-500">*</span></label>
+                                    <input type="number" id="input-studentNumber" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 1">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">กลุ่มสาระการเรียนรู้ <span class="text-red-500">*</span></label>
+                                    <select id="input-department" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="คณิตศาสตร์">คณิตศาสตร์</option>
+                                        <option value="วิทยาศาสตร์และเทคโนโลยี">วิทยาศาสตร์และเทคโนโลยี</option>
+                                        <option value="ภาษาไทย">ภาษาไทย</option>
+                                        <option value="ภาษาต่างประเทศ">ภาษาต่างประเทศ</option>
+                                        <option value="สังคมศึกษาฯ">สังคมศึกษาฯ</option>
+                                        <option value="สุขศึกษาและพลศึกษา">สุขศึกษาและพลศึกษา</option>
+                                        <option value="ศิลปะ">ศิลปะ</option>
+                                        <option value="การงานอาชีพ">การงานอาชีพ</option>
+                                        <option value="กิจกรรมพัฒนาผู้เรียน">กิจกรรมพัฒนาผู้เรียน</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">รายวิชา <span class="text-red-500">*</span></label>
+                                    <input type="text" id="input-subject" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น คณิตศาสตร์ (ค21101)">
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">ประเภทที่แก้ <span class="text-red-500">*</span></label>
+                                    <select id="input-type" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="0">0 (ศูนย์)</option>
+                                        <option value="ร">ร (รอการตัดสิน)</option>
+                                        <option value="มส">มส (ไม่มีสิทธิ์สอบ)</option>
+                                        <option value="มผ">มผ (ไม่ผ่านกิจกรรม)</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">เกรดที่ได้ <span class="text-red-500">*</span></label>
+                                    <!-- เกรดที่ได้มีแค่ 1 และ ผ -->
+                                    <select id="input-newGrade" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="" disabled selected>-- เลือกเกรด --</option>
+                                        <option value="1">1</option>
+                                        <option value="ผ">ผ (ผ่าน)</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-1 md:col-span-4">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">หมายเหตุ <span class="text-xs font-normal text-red-500 ml-1">(หากได้เกรดอื่นๆ หรือ 1.5 - 4 ให้ใส่เกรดที่ได้ตรงหมายเหตุ และโทรแจ้งงานวัดผลโดยตรง)</span></label>
+                                    <input type="text" id="input-remarks" class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="ระบุเพิ่มเติม (ถ้ามี)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ฟอร์มลงทะเบียนเรียนซ้ำ -->
+                        <div id="retakeFormSection" class="hidden space-y-8 bg-white p-6 md:p-8 rounded-xl border border-green-300 shadow-md">
+                            <div class="bg-green-600 text-white p-6 rounded-xl text-center shadow-sm">
+                                <h1 class="text-2xl font-bold font-prompt">แบบบันทึกการเรียนซ้ำรายวิชา</h1>
+                                <p class="text-green-100 mt-1">แบบฟอร์มออนไลน์สำหรับบันทึกผลการเรียนซ้ำ</p>
+                            </div>
+                            
+                            <div>
+                                <h2 class="text-lg font-semibold border-b-2 border-green-500 pb-2 mb-4 text-green-700">1. ข้อมูลนักเรียนและภาคเรียน</h2>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">ภาคเรียนที่ <span class="text-red-500">*</span></label>
+                                        <select id="retake-term" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                            <option value="">เลือกภาคเรียน</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">ปีการศึกษา <span class="text-red-500">*</span></label>
+                                        <input type="number" id="retake-academicYear" data-req="true" placeholder="เช่น 2569" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อ-นามสกุล นักเรียน <span class="text-red-500">*</span></label>
+                                        <input type="text" id="retake-studentName" data-req="true" placeholder="ด.ช. / ด.ญ. / นาย / นางสาว" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">เลขประจำตัว <span class="text-red-500">*</span></label>
+                                        <input type="text" id="retake-studentId" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">ชั้น <span class="text-red-500">*</span></label>
+                                            <input type="text" id="retake-grade" data-req="true" placeholder="เช่น ม.4" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">ห้อง <span class="text-red-500">*</span></label>
+                                            <input type="text" id="retake-room" data-req="true" placeholder="เช่น 1" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">เลขที่ <span class="text-red-500">*</span></label>
+                                            <input type="number" id="retake-studentNumber" data-req="true" placeholder="เช่น 5" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h2 class="text-lg font-semibold border-b-2 border-green-500 pb-2 mb-4 text-green-700">2. ข้อมูลวิชาที่ลงทะเบียนเรียนซ้ำ</h2>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อวิชา (และรหัสวิชา) <span class="text-red-500">*</span></label>
+                                        <input type="text" id="retake-subject" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="เช่น คณิตศาสตร์พื้นฐาน (ค21101)">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">กลุ่มสาระการเรียนรู้ <span class="text-red-500">*</span></label>
+                                        <select id="retake-department" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                            <option value="" disabled selected>-- เลือกกลุ่มสาระ --</option>
+                                            <option value="คณิตศาสตร์">คณิตศาสตร์</option>
+                                            <option value="วิทยาศาสตร์และเทคโนโลยี">วิทยาศาสตร์และเทคโนโลยี</option>
+                                            <option value="ภาษาไทย">ภาษาไทย</option>
+                                            <option value="ภาษาต่างประเทศ">ภาษาต่างประเทศ</option>
+                                            <option value="สังคมศึกษาฯ">สังคมศึกษาฯ</option>
+                                            <option value="สุขศึกษาและพลศึกษา">สุขศึกษาและพลศึกษา</option>
+                                            <option value="ศิลปะ">ศิลปะ</option>
+                                            <option value="การงานอาชีพ">การงานอาชีพ</option>
+                                            <option value="กิจกรรมพัฒนาผู้เรียน">กิจกรรมพัฒนาผู้เรียน</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทที่แก้ <span class="text-red-500">*</span></label>
+                                        <select id="retake-type" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                            <option value="" disabled selected>-- เลือกประเภท --</option>
+                                            <option value="0">0 (ศูนย์)</option>
+                                            <option value="ร">ร (รอการตัดสิน)</option>
+                                            <option value="มส">มส (ไม่มีสิทธิ์สอบ)</option>
+                                            <option value="มผ">มผ (ไม่ผ่านกิจกรรม)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ส่วนที่เพิ่มเติม: สรุปผลการเรียนและบันทึกคะแนน -->
+                            <div>
+                                <h2 class="text-lg font-semibold border-b-2 border-green-500 pb-2 mb-4 text-green-700">3. สรุปผลการเรียนและคะแนน</h2>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">สรุปการเข้าเรียนซ้ำ (%) <span class="text-red-500">*</span></label>
+                                        <input type="number" id="retake-attendance" data-req="true" min="80" max="100" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="ต้อง 80% ขึ้นไป">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">คะแนนที่ได้ (ต้องผ่าน 50 คะแนน) <span class="text-red-500">*</span></label>
+                                        <input type="number" id="retake-score" data-req="true" min="50" max="100" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="ระบุคะแนน">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">เกรดที่ได้หลังลงเรียนซ้ำ <span class="text-red-500">*</span></label>
+                                        <!-- เกรดที่ได้มีแค่ 1 และ ผ -->
+                                        <select id="retake-newGrade" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
+                                            <option value="" disabled selected>-- เลือกเกรด --</option>
+                                            <option value="1">1</option>
+                                            <option value="ผ">ผ (ผ่าน)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ <span class="text-xs font-normal text-red-500 ml-1">(หากมีข้อสังเกตเพิ่มเติม)</span></label>
+                                        <input type="text" id="retake-remarks" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50" placeholder="ระบุเพิ่มเติม (ถ้ามี)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-6 mt-6 border-t border-gray-200 flex justify-end">
+                            <button type="submit" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-md hover:shadow-lg transform transition hover:-translate-y-0.5 flex items-center justify-center text-lg">
+                                <i class="fas fa-paper-plane mr-2"></i> ส่งข้อมูลให้งานวัดผล
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="content-teacher-history" class="hidden p-6 md:p-8 animate-fade-in">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                        <div class="flex items-center">
+                            <div class="bg-gray-100 p-3 rounded-xl mr-4 text-gray-600 border border-gray-200">
+                                <i class="fas fa-history text-xl"></i>
+                            </div>
+                            <h2 class="text-xl font-bold text-gray-800">ประวัติการส่งรายการของคุณ</h2>
+                        </div>
+                        <button onclick="exportExcel('teacher_history')" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-lg shadow-sm flex items-center transition-colors font-bold whitespace-nowrap">
+                            <i class="fas fa-file-excel mr-2"></i> ส่งออกประวัติของฉัน
+                        </button>
+                    </div>
+                    
+                    <div class="table-container overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">ภาคเรียน/ปี</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">นร. / วิชา</th>
+                                    <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">แก้ -> ผลใหม่</th>
+                                    <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">รูปแบบการดำเนินการ</th>
+                                    <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="teacherTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN VIEW -->
+        <div id="adminView" class="hidden animate-fade-in">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 mb-8">
+                <div class="border-b border-gray-200 bg-gray-50">
+                    <nav class="flex overflow-x-auto custom-scrollbar" aria-label="Tabs">
+                        <button onclick="switchTab('admin', 'pending')" id="tab-admin-pending" class="tab-active flex-1 py-4 px-4 text-center text-sm font-bold transition-colors duration-200 whitespace-nowrap relative border-r border-gray-200">
+                            <i class="fas fa-clipboard-check mr-2 text-yellow-600"></i>รอพิจารณา 
+                            <span id="pendingBadge" class="ml-1.5 bg-red-500 text-white text-xs py-0.5 px-2 rounded-full shadow-sm">0</span>
+                        </button>
+                        <button onclick="switchTab('admin', 'history')" id="tab-admin-history" class="tab-inactive flex-1 py-4 px-4 text-center text-sm font-bold transition-colors duration-200 whitespace-nowrap border-r border-gray-200">
+                            <i class="fas fa-database mr-2 text-blue-500"></i>ข้อมูลทั้งหมด (กรองได้)
+                        </button>
+                        <button onclick="switchTab('admin', 'reports')" id="tab-admin-reports" class="tab-inactive flex-1 py-4 px-4 text-center text-sm font-bold transition-colors duration-200 whitespace-nowrap border-r border-gray-200">
+                            <i class="fas fa-file-excel mr-2 text-green-600"></i>ศูนย์รวมรายงาน & ส่งออก
+                        </button>
+                        <button onclick="switchTab('admin', 'analytics')" id="tab-admin-analytics" class="tab-inactive flex-1 py-4 px-4 text-center text-sm font-bold transition-colors duration-200 whitespace-nowrap">
+                            <i class="fas fa-chart-line mr-2 text-purple-600"></i>แดชบอร์ดสถิติ
+                        </button>
+                    </nav>
+                </div>
+
+                <div id="content-admin-pending" class="p-6 md:p-8">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-l-4 border-yellow-400 pl-4 gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">รายการคำขอที่ต้องตรวจสอบ</h2>
+                            <p class="text-sm text-gray-500">ตรวจสอบสถิติและอนุมัติผลการแก้</p>
+                        </div>
+                        <button onclick="exportExcel('pending')" class="mt-4 sm:mt-0 bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-lg shadow-sm flex items-center transition-colors">
+                            <i class="fas fa-file-excel mr-2"></i> ส่งออกรายการรออนุมัติ
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" id="adminQuickStats">
+                        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                            <div><p class="text-sm text-blue-600 font-bold mb-1">คำขอใหม่วันนี้</p><h3 class="text-2xl font-black text-blue-800" id="statToday">0</h3></div>
+                            <div class="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center text-blue-600 text-xl"><i class="fas fa-calendar-day"></i></div>
+                        </div>
+                        <div class="bg-purple-50 border border-purple-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                            <div><p class="text-sm text-purple-600 font-bold mb-1">คำขอใหม่เดือนนี้</p><h3 class="text-2xl font-black text-purple-800" id="statMonth">0</h3></div>
+                            <div class="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center text-purple-600 text-xl"><i class="fas fa-calendar-alt"></i></div>
+                        </div>
+                        <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                            <div><p class="text-sm text-yellow-600 font-bold mb-1">รออนุมัติทั้งหมด</p><h3 class="text-2xl font-black text-yellow-800" id="statPendingTotal">0</h3></div>
+                            <div class="w-12 h-12 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-600 text-xl"><i class="fas fa-clock"></i></div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th scope="col" class="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase">เทอม/ปี</th>
+                                    <th scope="col" class="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase">ครูผู้ส่ง</th>
+                                    <th scope="col" class="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase">ข้อมูลนักเรียน / วิชา</th>
+                                    <th scope="col" class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase">ผลการแก้</th>
+                                    <th scope="col" class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase">รูปแบบ</th>
+                                    <th scope="col" class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="adminPendingTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="content-admin-history" class="hidden p-6 md:p-8 animate-fade-in">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-l-4 border-blue-500 pl-4">
+                        <h2 class="text-xl font-bold text-gray-800">ประวัติและข้อมูลทั้งหมด</h2>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 space-y-4">
+                        <div class="text-sm font-bold text-gray-700 flex items-center justify-between border-b pb-2">
+                            <span><i class="fas fa-filter mr-2 text-blue-500"></i>ตัวกรองข้อมูลขั้นสูง</span>
+                            <span id="filteredCountText" class="text-xs font-bold text-blue-700 bg-blue-100 px-3 py-1 rounded-full border border-blue-200">พบ 0 รายการ</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <div><label class="block text-xs font-semibold text-gray-600 mb-1">ปีการศึกษา</label><select id="filterYear" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทุกปี --</option></select></div>
+                            <div><label class="block text-xs font-semibold text-gray-600 mb-1">ภาคเรียน</label><select id="filterTerm" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทุกเทอม --</option><option value="1">เทอม 1</option><option value="2">เทอม 2</option></select></div>
+                            <div><label class="block text-xs font-semibold text-gray-600 mb-1">ระดับชั้น/ห้องเรียน</label><select id="adminRoomFilter" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทุกระดับชั้น/ห้อง --</option></select></div>
+                            <div><label class="block text-xs font-semibold text-gray-600 mb-1">กลุ่มสาระฯ / วิชา</label><select id="filterDepartment" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทั้งหมด --</option></select></div>
+                            <div><label class="block text-xs font-semibold text-gray-600 mb-1">สถานะ</label><select id="filterStatus" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทุกสถานะ --</option><option value="pending">รอตรวจสอบ</option><option value="approved">อนุมัติแล้ว</option><option value="rejected">ตีกลับ</option></select></div>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                            <button onclick="resetAdminFilters()" class="text-xs text-gray-500 hover:text-red-600 font-medium flex items-center transition-colors bg-gray-100 px-3 py-1.5 rounded-lg"><i class="fas fa-undo mr-1.5"></i> ล้างตัวกรอง</button>
+                            <button onclick="exportExcel('history')" class="bg-green-600 hover:bg-green-700 text-white text-sm px-5 py-2 rounded-lg shadow-sm flex items-center transition-colors font-bold"><i class="fas fa-file-excel mr-2"></i> Export Data ตามตัวกรอง (Excel)</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">ว/ด/ป (เทอม/ปี)</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">นักเรียน (ห้อง)</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">วิชา / ผู้สอน</th>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ -> ผลใหม่</th>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">รูปแบบ</th>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="adminHistoryTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="content-admin-reports" class="hidden p-6 md:p-8 animate-fade-in">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 border-l-4 border-green-500 pl-4 gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">ศูนย์รวมรายงานและส่งออก (Reporting Hub)</h2>
+                            <p class="text-sm text-gray-500 no-print">เลือกประเภทรายงานที่ต้องการสรุป ดาวน์โหลดเป็น Excel หรือพิมพ์เอกสาร</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 no-print">
+                            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-md flex items-center transition-transform transform hover:scale-105"><i class="fas fa-print mr-2 text-lg"></i> พิมพ์รายงาน</button>
+                            <button onclick="exportExcel('current_report')" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-md flex items-center transition-transform transform hover:scale-105"><i class="fas fa-file-excel mr-2 text-lg"></i> ส่งออกรายงานนี้</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 flex flex-wrap gap-4 items-end no-print">
+                        <div class="w-full sm:w-auto flex-grow">
+                            <label class="block text-sm font-bold text-gray-700 mb-1">เลือกประเภทรายงาน</label>
+                            <select id="reportTypeSelector" onchange="generateReport()" class="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-green-500 font-semibold shadow-sm cursor-pointer">
+                                <option value="daily">📝 สรุปสถิติรายวัน (Daily Report)</option>
+                                <option value="monthly">📅 สรุปสถิติรายเดือน (Monthly Report)</option>
+                                <option value="term_year">📊 สรุปรายเทอม / รายปีการศึกษา (ภาพรวม)</option>
+                                <option value="class_room">🏫 สรุปเปรียบเทียบระดับชั้น / รายห้องเรียน</option>
+                            </select>
+                        </div>
+                        <div id="reportSubFilterContainer" class="w-full sm:w-auto"></div>
+                    </div>
+                    
+                    <div class="table-container overflow-x-auto border border-gray-200 rounded-xl shadow-sm bg-white">
+                        <table class="min-w-full divide-y divide-gray-200" id="reportTableElement">
+                            <thead class="bg-gray-100" id="reportTableHeader"></thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="reportTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="content-admin-analytics" class="hidden p-6 md:p-8 animate-fade-in bg-gray-50/50">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 border-l-4 border-purple-500 pl-4 gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">แดชบอร์ดวิเคราะห์และสถิติ (Analytics)</h2>
+                            <p class="text-sm text-gray-500">ดูภาพรวมและเลือกปี/เทอมเพื่อเปรียบเทียบข้อมูลได้อย่างอิสระ</p>
+                        </div>
+                        <div class="flex gap-2 items-center flex-wrap">
+                            <div class="flex gap-2 items-center bg-white p-2 rounded-lg border border-purple-100 shadow-sm" data-html2canvas-ignore>
+                                <span class="text-xs font-bold text-purple-700 mr-1"><i class="fas fa-filter"></i> ตัวกรองหลัก:</span>
+                                <select id="analyticsGlobalYear" onchange="updateCharts()" class="text-sm border border-gray-300 rounded p-1.5 focus:ring-2 focus:ring-purple-300 outline-none">
+                                    <option value="all">-- ทุกปีการศึกษา --</option>
+                                </select>
+                                <select id="analyticsGlobalTerm" onchange="updateCharts()" class="text-sm border border-gray-300 rounded p-1.5 focus:ring-2 focus:ring-purple-300 outline-none">
+                                    <option value="all">-- ทุกเทอม --</option>
+                                    <option value="1">เทอม 1</option>
+                                    <option value="2">เทอม 2</option>
+                                </select>
+                            </div>
+                            <button onclick="exportAnalyticsPDF()" class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow-sm flex items-center transition-colors" data-html2canvas-ignore>
+                                <i class="fas fa-file-pdf mr-2"></i> Export PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="text-md font-bold text-gray-700 mb-4 text-center">สัดส่วนสถานะการอนุมัติทั้งหมด</h3>
+                            <div class="relative h-64 w-full flex justify-center">
+                                <canvas id="adminStatusChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="text-md font-bold text-gray-700 mb-4 text-center">จำนวนที่ผ่านการอนุมัติแบ่งตามประเภท (0, ร, มส, มผ)</h3>
+                            <div class="relative h-64 w-full flex justify-center">
+                                <canvas id="adminTypeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-purple-200 p-6">
+                        <div class="border-b border-gray-100 pb-4 mb-6">
+                            <h3 class="text-lg font-bold text-gray-800 flex items-center"><i class="fas fa-balance-scale text-purple-500 mr-2"></i> เปรียบเทียบข้อมูล 2 ช่วงเวลา (เฉพาะรายการที่อนุมัติแล้ว)</h3>
+                            
+                            <div class="flex flex-col lg:flex-row gap-4 mt-4 items-center" data-html2canvas-ignore>
+                                <div class="bg-blue-50 p-3 rounded-lg flex flex-wrap gap-2 items-center border border-blue-200 w-full lg:w-auto shadow-sm">
+                                    <span class="font-bold text-sm text-blue-800 w-full sm:w-auto"><i class="fas fa-database mr-1"></i> ชุดข้อมูลที่ 1:</span>
+                                    <select id="cmpYear1" onchange="updateCharts()" class="text-sm border border-gray-300 rounded p-1.5 focus:ring-blue-500"></select>
+                                    <select id="cmpTerm1" onchange="updateCharts()" class="text-sm border border-gray-300 rounded p-1.5 focus:ring-blue-500">
+                                        <option value="all">ทุกเทอม</option>
+                                        <option value="1">เทอม 1</option>
+                                        <option value="2">เทอม 2</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="text-gray-400 font-bold text-lg rounded-full bg-gray-100 w-8 h-8 flex items-center justify-center shadow-inner">VS</div>
+                                
+                                <div class="bg-purple-50 p-3 rounded-lg flex flex-wrap gap-2 items-center border border-purple-200 w-full lg:w-auto shadow-sm">
+                                    <span class="font-bold text-sm text-purple-800 w-full sm:w-auto"><i class="fas fa-database mr-1"></i> ชุดข้อมูลที่ 2:</span>
+                                    <select id="cmpYear2" onchange="updateCharts()" class="text-sm border border-gray-300 rounded p-1.5 focus:ring-purple-500"></select>
+                                    <select id="cmpTerm2" onchange="updateCharts()" class="text-sm border border-gray-300 rounded p-1.5 focus:ring-purple-500">
+                                        <option value="all">ทุกเทอม</option>
+                                        <option value="1">เทอม 1</option>
+                                        <option value="2">เทอม 2</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-600 mb-3 text-center" id="lblTitle1">เปรียบเทียบตามระดับชั้นเรียน</h4>
+                                <div class="relative h-72 w-full">
+                                    <canvas id="adminCompareClassChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-600 mb-3 text-center" id="lblTitle2">เปรียบเทียบตามประเภท (0, ร, มส, มผ)</h4>
+                                <div class="relative h-72 w-full">
+                                    <canvas id="adminCompareTypeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="homeroomTrackingSection" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8 animate-fade-in">
+            <div class="bg-indigo-700 px-6 py-4 flex flex-col md:flex-row justify-between items-center">
+                <h2 class="text-lg font-bold text-white flex items-center">
+                    <i class="fas fa-users mr-3"></i>ติดตามนักเรียนในที่ปรึกษา / ค้นหาประวัติ
+                </h2>
+                <div class="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3 items-center w-full md:w-auto">
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="exportHomeroomExcel()" class="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 px-3 rounded shadow-sm flex items-center transition-colors w-full sm:w-auto justify-center">
+                            <i class="fas fa-file-excel mr-1.5"></i> Excel
+                        </button>
+                        <button onclick="exportHomeroomPDF()" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1.5 px-3 rounded shadow-sm flex items-center transition-colors w-full sm:w-auto justify-center">
+                            <i class="fas fa-file-pdf mr-1.5"></i> PDF
+                        </button>
+                    </div>
+                    <div class="relative w-full sm:w-auto">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400 text-sm"></i>
+                        </div>
+                        <input type="text" id="searchInput" onkeyup="searchStudent()" class="w-full sm:w-56 pl-9 px-3 py-1.5 bg-white border-none rounded-lg focus:ring-2 focus:ring-indigo-300 text-sm" placeholder="ค้นหารหัสนักเรียน, ชื่อ...">
+                    </div>
+                    <select id="homeroomSelect" onchange="renderHomeroomTable()" class="bg-white text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-300 px-3 py-1.5 border-none font-medium cursor-pointer shadow-sm w-full sm:w-auto">
+                        <option value="">-- กรองตามห้องเรียน --</option>
+                        <option value="ม.1/1">ม.1/1</option><option value="ม.1/2">ม.1/2</option>
+                        <option value="ม.2/1">ม.2/1</option><option value="ม.3/1">ม.3/1</option>
+                        <option value="ม.4/1">ม.4/1</option><option value="ม.6/1">ม.6/1</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="homeroomPrintArea" class="bg-white">
+                <div id="homeroomExportHeader" class="hidden px-6 py-6 text-center border-b border-gray-100">
+                    <h2 class="text-2xl font-bold text-gray-800">รายงานผลการแก้ 0, ร, มส, มผ นักเรียนในที่ปรึกษา</h2>
+                    <p class="text-md text-gray-600 mt-2" id="homeroomExportSubtitle">ข้อมูล ณ วันที่ <span id="homeroomExportDate"></span></p>
+                </div>
+                <div class="table-container overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200" id="homeroomTableElement">
+                        <thead class="bg-indigo-50/50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-indigo-800 uppercase">นักเรียน (เลขที่)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-indigo-800 uppercase">เทอม/ปี</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-indigo-800 uppercase">วิชา / ครูผู้สอน</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-indigo-800 uppercase">แก้ได้</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-indigo-800 uppercase">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-100" id="homeroomTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const todayStr = new Date().toISOString().substring(0, 10);
+        const STORAGE_KEY = 'grade_resolution_system_data';
+        
+        let defaultAppData = [
+            { id: 1, date: todayStr, time: '09:15', academicYear: '2569', term: '1', department: 'คณิตศาสตร์', teacher: 'ครูสมปอง สุขใจ', studentId: '65012', studentName: 'ด.ช.วิชัย รักเรียน', gradeLevel: 'ม.1/1', studentNumber: '5', subject: 'คณิตศาสตร์ (ค21101)', type: '0', newGrade: '1', remarks: '', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'pending' },
+            { id: 2, date: todayStr, time: '10:30', academicYear: '2569', term: '1', department: 'วิทยาศาสตร์และเทคโนโลยี', teacher: 'ครูมานี ดีงาม', studentId: '65023', studentName: 'ด.ญ.สุดา น่ารัก', gradeLevel: 'ม.2/1', studentNumber: '12', subject: 'วิทยาศาสตร์ (ว21101)', type: 'ร', newGrade: '1', remarks: 'ได้เกรด 1.5 โทรแจ้งวัดผลแล้ว', correctionMethod: 'ลงทะเบียนเรียนซ้ำ', attendance: 85, score: 55, status: 'pending' },
+            { id: 3, date: '2026-09-10', time: '14:20', academicYear: '2568', term: '2', department: 'ภาษาไทย', teacher: 'ครูสมปอง สุขใจ', studentId: '65045', studentName: 'นายกล้า หาญชาญ', gradeLevel: 'ม.4/1', studentNumber: '8', subject: 'ภาษาไทย (ท31101)', type: 'มส', newGrade: '1', remarks: 'ขาดเรียนบ่อย', correctionMethod: 'ลงทะเบียนเรียนซ้ำ', attendance: 75, score: 40, status: 'rejected' },
+            { id: 4, date: todayStr, time: '08:45', academicYear: '2569', term: '1', department: 'กิจกรรมพัฒนาผู้เรียน', teacher: 'ครูสมศรี มีสุข', studentId: '66101', studentName: 'ด.ช.เก่ง การเรียน', gradeLevel: 'ม.1/2', studentNumber: '1', subject: 'กิจกรรมชุมนุม', type: 'มผ', newGrade: 'ผ', remarks: 'ส่งงานครบแล้ว', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'pending' },
+            { id: 5, date: '2026-10-01', time: '11:10', academicYear: '2568', term: '2', department: 'ภาษาต่างประเทศ', teacher: 'ครูมานี ดีงาม', studentId: '66105', studentName: 'นางสาวมาลี สีชมพู', gradeLevel: 'ม.6/1', studentNumber: '25', subject: 'ภาษาอังกฤษ (อ31101)', type: '0', newGrade: '1', remarks: '', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'approved' },
+            { id: 6, date: todayStr, time: '13:05', academicYear: '2569', term: '1', department: 'สังคมศึกษาฯ', teacher: 'ครูวิจิตร ใจดี', studentId: '67001', studentName: 'นายสมชาย หมายมั่น', gradeLevel: 'ม.4/2', studentNumber: '2', subject: 'ประวัติศาสตร์ (ส31102)', type: 'ร', newGrade: '1', remarks: '', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'pending' }
+        ];
+
+        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultAppData;
+
+        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
+
+        let currentRole = 'teacher';
+        let currentTeacherName = 'ครูสมปอง สุขใจ';
+        let analyticsFiltersPopulated = false;
+
+        let adminStatusChartInst, adminTypeChartInst, adminCompareClassChartInst, adminCompareTypeChartInst;
+
+        function formatDateThai(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' });
+        }
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'pending': return `<span class="px-2 py-1 inline-flex text-xs leading-5 font-bold rounded bg-yellow-100 text-yellow-800"><i class="fas fa-clock mr-1 mt-0.5"></i>รอตรวจสอบ</span>`;
+                case 'approved': return `<span class="px-2 py-1 inline-flex text-xs leading-5 font-bold rounded bg-green-100 text-green-800"><i class="fas fa-check mr-1 mt-0.5"></i>อนุมัติ</span>`;
+                case 'rejected': return `<span class="px-2 py-1 inline-flex text-xs leading-5 font-bold rounded bg-red-100 text-red-800"><i class="fas fa-times mr-1 mt-0.5"></i>ตีกลับ</span>`;
+                default: return `<span class="px-2 py-1 text-xs bg-gray-100 text-gray-800">ไม่ทราบ</span>`;
+            }
+        }
+
+        function getTypeBadge(type) {
+             const styles = {
+                 '0': 'bg-red-100 text-red-700 border-red-200',
+                 'ร': 'bg-orange-100 text-orange-700 border-orange-200',
+                 'มส': 'bg-purple-100 text-purple-700 border-purple-200',
+                 'มผ': 'bg-gray-200 text-gray-700 border-gray-300'
+             };
+             const style = styles[type] || 'bg-gray-100 text-gray-800';
+             return `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm border ${style} shadow-sm">${type}</span>`;
+        }
+
+        function getMethodBadge(method) {
+            if (method === 'ลงทะเบียนเรียนซ้ำ') {
+                return `<span class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-md border border-purple-200 shadow-sm font-medium"><i class="fas fa-book-open mr-1"></i>ลงทะเบียนเรียนซ้ำ</span>`;
+            } else {
+                return `<span class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-md border border-blue-200 shadow-sm font-medium"><i class="fas fa-history mr-1"></i>แก้เกรดเทอมที่ผ่านมา</span>`;
+            }
+        }
+
+        function switchRole(role) {
+            currentRole = role;
+            const currentRoleText = document.getElementById('currentRoleText');
+            
+            if (role === 'teacher') {
+                document.getElementById('teacherView').classList.remove('hidden');
+                document.getElementById('adminView').classList.add('hidden');
+                currentRoleText.textContent = 'คุณครู';
+                currentRoleText.className = 'bg-blue-600 px-3 py-1 rounded-full shadow-inner border border-blue-500 text-white text-xs font-bold';
+                switchTab('teacher', 'form');
+            } else {
+                document.getElementById('teacherView').classList.add('hidden');
+                document.getElementById('adminView').classList.remove('hidden');
+                currentRoleText.textContent = 'งานวัดผล';
+                currentRoleText.className = 'bg-purple-600 px-3 py-1 rounded-full shadow-inner border border-purple-500 text-white text-xs font-bold';
+                switchTab('admin', 'pending');
+            }
+            renderApp();
+        }
+
+        function switchTab(view, tabName) {
+            document.querySelectorAll(`[id^="tab-${view}-"]`).forEach(el => {
+                el.classList.remove('tab-active');
+                el.classList.add('tab-inactive');
+            });
+            const selectedTab = document.getElementById(`tab-${view}-${tabName}`);
+            if(selectedTab) { selectedTab.classList.remove('tab-inactive'); selectedTab.classList.add('tab-active'); }
+
+            document.querySelectorAll(`[id^="content-${view}-"]`).forEach(el => el.classList.add('hidden'));
+            const selectedContent = document.getElementById(`content-${view}-${tabName}`);
+            if(selectedContent) selectedContent.classList.remove('hidden');
+            
+            if (view === 'admin') {
+                if(tabName === 'history') populateAdminFilters();
+                if(tabName === 'reports') generateReport();
+                if(tabName === 'analytics') {
+                    populateAnalyticsSelectors();
+                    updateCharts();
+                }
+            }
+        }
+
+        function renderApp() {
+            renderHomeroomTable();
+            if (currentRole === 'teacher') {
+                renderTeacherHistory();
+            } else {
+                updateAdminQuickStats();
+                renderAdminPendingTable();
+                renderAdminHistoryTable();
+                updatePendingBadge();
+            }
+        }
+
+        function updateAdminQuickStats() {
+            const today = new Date().toISOString().substring(0, 10);
+            const currentMonth = today.substring(0, 7);
+            let todayCount = 0, monthCount = 0, pendingTotal = 0;
+            appData.forEach(item => {
+                if (item.status === 'pending') {
+                    pendingTotal++;
+                    if (item.date === today) todayCount++;
+                    if (item.date.startsWith(currentMonth)) monthCount++;
+                }
+            });
+            if(document.getElementById('statToday')) document.getElementById('statToday').innerText = todayCount;
+            if(document.getElementById('statMonth')) document.getElementById('statMonth').innerText = monthCount;
+            if(document.getElementById('statPendingTotal')) document.getElementById('statPendingTotal').innerText = pendingTotal;
+        }
+
+        function updatePendingBadge() {
+            const count = appData.filter(d => d.status === 'pending').length;
+            const badge = document.getElementById('pendingBadge');
+            if(badge) { badge.innerText = count; badge.classList.toggle('hidden', count === 0); }
+        }
+        
+        function toggleFormMode() {
+            const isRetake = document.querySelector('input[name="input-correctionMethod"]:checked').value === 'ลงทะเบียนเรียนซ้ำ';
+            document.getElementById('normalFormSection').classList.toggle('hidden', isRetake);
+            document.getElementById('retakeFormSection').classList.toggle('hidden', !isRetake);
+            
+            document.querySelectorAll('#normalFormSection [required], #normalFormSection [data-req]').forEach(el => {
+                if(isRetake) { el.setAttribute('data-req', 'true'); el.removeAttribute('required'); }
+                else { el.setAttribute('required', 'required'); el.removeAttribute('data-req'); }
+            });
+            document.querySelectorAll('#retakeFormSection [required], #retakeFormSection [data-req]').forEach(el => {
+                if(!isRetake) { el.setAttribute('data-req', 'true'); el.removeAttribute('required'); }
+                else { el.setAttribute('required', 'required'); el.removeAttribute('data-req'); }
+            });
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const now = new Date();
+            const selectedMethod = document.querySelector('input[name="input-correctionMethod"]:checked').value;
+            let formObj = {};
+            
+            if (selectedMethod === 'แก้เกรดเทอมที่ผ่านมา') {
+                formObj = {
+                    academicYear: document.getElementById('input-academicYear').value,
+                    term: document.getElementById('input-term').value,
+                    department: document.getElementById('input-department').value,
+                    studentId: document.getElementById('input-studentId').value,
+                    studentName: document.getElementById('input-studentName').value,
+                    gradeLevel: document.getElementById('input-gradeLevel').value,
+                    studentNumber: document.getElementById('input-studentNumber').value,
+                    subject: document.getElementById('input-subject').value,
+                    type: document.getElementById('input-type').value,
+                    newGrade: document.getElementById('input-newGrade').value,
+                    remarks: document.getElementById('input-remarks').value,
+                };
+            } else {
+                const att = parseInt(document.getElementById('retake-attendance').value);
+                const score = parseInt(document.getElementById('retake-score').value);
+                
+                if (att < 80) {
+                    Swal.fire('เกิดข้อผิดพลาด', 'สรุปการเข้าเรียนซ้ำต้องมากกว่าหรือเท่ากับ 80%', 'error');
+                    return;
+                }
+                if (score < 50) {
+                    Swal.fire('เกิดข้อผิดพลาด', 'ผลการเรียนต้องผ่าน 50 คะแนน', 'error');
+                    return;
+                }
+                
+                formObj = {
+                    academicYear: document.getElementById('retake-academicYear').value,
+                    term: document.getElementById('retake-term').value,
+                    department: document.getElementById('retake-department').value,
+                    studentId: document.getElementById('retake-studentId').value,
+                    studentName: document.getElementById('retake-studentName').value,
+                    gradeLevel: document.getElementById('retake-grade').value + '/' + document.getElementById('retake-room').value,
+                    studentNumber: document.getElementById('retake-studentNumber').value,
+                    subject: document.getElementById('retake-subject').value,
+                    type: document.getElementById('retake-type').value,
+                    newGrade: document.getElementById('retake-newGrade').value,
+                    remarks: document.getElementById('retake-remarks').value,
+                    attendance: att,
+                    score: score
+                };
+            }
+            
+            const newItem = {
+                id: appData.length ? Math.max(...appData.map(d => d.id)) + 1 : 1,
+                date: now.toISOString().substring(0, 10),
+                time: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+                teacher: currentTeacherName,
+                correctionMethod: selectedMethod,
+                status: 'pending',
+                ...formObj
+            };
+
+            appData.push(newItem);
+            saveData();
+            
+            Swal.fire({ title: 'บันทึกสำเร็จ!', text: 'ส่งข้อมูลให้งานวัดผลเรียบร้อย', icon: 'success', timer: 1500, showConfirmButton: false });
+            document.getElementById('resolutionForm').reset();
+            
+            document.querySelector('input[name="input-correctionMethod"][value="แก้เกรดเทอมที่ผ่านมา"]').checked = true;
+            toggleFormMode();
+            
+            renderApp();
+            setTimeout(() => switchTab('teacher', 'history'), 500);
+        }
+
+        function handleApproval(id, newStatus) {
+            const index = appData.findIndex(item => item.id === id);
+            if (index === -1) return;
+            let actionText = newStatus === 'approved' ? 'อนุมัติ' : 'ตีกลับ';
+            let confirmColor = newStatus === 'approved' ? '#16a34a' : '#dc2626';
+            
+            Swal.fire({
+                title: `ยืนยันการ${actionText}?`,
+                text: `รายการของ ${appData[index].studentName}`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: confirmColor,
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonText: `ใช่, ${actionText}`
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    appData[index].status = newStatus;
+                    saveData();
+                    renderApp(); 
+                    if(!document.getElementById('content-admin-analytics').classList.contains('hidden')) updateCharts();
+                    if(!document.getElementById('content-admin-reports').classList.contains('hidden')) generateReport();
+                }
+            });
+        }
+
+        function renderTeacherHistory() {
+            const tbody = document.getElementById('teacherTableBody');
+            if(!tbody) return;
+            const myData = appData.filter(d => d.teacher === currentTeacherName).sort((a,b) => b.id - a.id);
+            if(!myData.length) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">ยังไม่มีประวัติการส่งข้อมูล</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = myData.map(item => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-bold">${item.term}/${item.academicYear}</td>
+                    <td class="px-6 py-4 text-sm">
+                        <div class="font-bold text-gray-800">${item.studentId} - ${item.studentName}</div>
+                        <div class="text-xs text-gray-500">ชั้น ${item.gradeLevel} | ลข. ${item.studentNumber} | วิชา: ${item.subject}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            ${getTypeBadge(item.type)} <i class="fas fa-arrow-right text-gray-300"></i> <span class="font-bold bg-gray-100 px-2 py-1 rounded">${item.newGrade}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">${getMethodBadge(item.correctionMethod)}</td>
+                    <td class="px-6 py-4 text-center">${getStatusBadge(item.status)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderHomeroomTable() {
+            const roomQuery = document.getElementById('homeroomSelect').value;
+            const textQuery = document.getElementById('searchInput').value.toLowerCase();
+            const tbody = document.getElementById('homeroomTableBody');
+            if(!tbody) return;
+            let filtered = appData;
+            if(roomQuery) filtered = filtered.filter(d => d.gradeLevel === roomQuery);
+            if(textQuery) filtered = filtered.filter(d => d.studentId.includes(textQuery) || d.studentName.toLowerCase().includes(textQuery));
+            
+            if(!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">ไม่พบข้อมูลที่ค้นหา</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = filtered.sort((a,b) => b.id - a.id).map(item => `
+                <tr class="hover:bg-indigo-50/30">
+                    <td class="px-6 py-3 text-sm">
+                        <div class="font-bold text-gray-800">${item.studentId}</div>
+                        <div class="text-gray-600">${item.studentName}</div>
+                        <div class="text-xs text-indigo-600 bg-indigo-50 inline-block px-1.5 rounded mt-0.5">ชั้น ${item.gradeLevel} เลขที่ ${item.studentNumber}</div>
+                    </td>
+                    <td class="px-6 py-3 text-sm text-gray-700">${item.term}/${item.academicYear}</td>
+                    <td class="px-6 py-3 text-sm">
+                        <div class="font-medium text-gray-800">${item.subject}</div>
+                        <div class="text-xs text-gray-500"><i class="fas fa-user-tie text-blue-400 mr-1"></i>${item.teacher}</div>
+                    </td>
+                    <td class="px-6 py-3 text-sm text-center">
+                        ${getTypeBadge(item.type)} <span class="mx-1 text-gray-400">-></span> <span class="font-bold">${item.newGrade}</span>
+                    </td>
+                    <td class="px-6 py-3 text-center">${getStatusBadge(item.status)}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function searchStudent() { renderHomeroomTable(); }
+
+        function renderAdminPendingTable() {
+            const tbody = document.getElementById('adminPendingTableBody');
+            if(!tbody) return;
+            const pendingData = appData.filter(d => d.status === 'pending').sort((a,b) => b.id - a.id);
+            if(!pendingData.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-gray-500 font-medium"><i class="fas fa-check-circle text-green-500 text-3xl mb-3 block"></i>ไม่มีรายการรอตรวจสอบ</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = pendingData.map(item => `
+                <tr class="hover:bg-yellow-50/30 transition-colors">
+                    <td class="px-4 py-3 text-sm font-medium text-gray-800">${item.term}/${item.academicYear}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <div class="font-bold text-gray-800">${item.teacher}</div>
+                        <div class="text-xs text-gray-500">${formatDateThai(item.date)} ${item.time}</div>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <div class="font-bold text-blue-700">${item.studentId} - ${item.studentName}</div>
+                        <div class="text-xs text-gray-600 bg-gray-100 inline-block px-1.5 rounded mt-1">ชั้น ${item.gradeLevel} ลข.${item.studentNumber} | ${item.subject}</div>
+                        ${item.attendance ? `<div class="text-xs text-green-600 mt-1">เวลาเรียน: ${item.attendance}% | คะแนน: ${item.score}</div>` : ''}
+                        ${item.remarks ? `<div class="text-xs text-red-500 mt-1"><i class="fas fa-info-circle"></i> ${item.remarks}</div>` : ''}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            ${getTypeBadge(item.type)} <i class="fas fa-arrow-right text-gray-300"></i> <span class="font-bold text-lg text-green-600">${item.newGrade}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center">${getMethodBadge(item.correctionMethod)}</td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                        <button onclick="handleApproval(${item.id}, 'approved')" class="bg-green-100 hover:bg-green-600 text-green-700 hover:text-white border border-green-300 hover:border-green-600 p-2 rounded-lg transition-colors mr-1 shadow-sm" title="อนุมัติ"><i class="fas fa-check"></i></button>
+                        <button onclick="handleApproval(${item.id}, 'rejected')" class="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white border border-red-300 hover:border-red-600 p-2 rounded-lg transition-colors shadow-sm" title="ตีกลับ"><i class="fas fa-times"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function populateAdminFilters() {
+            const years = [...new Set(appData.map(item => item.academicYear))].sort((a, b) => b - a);
+            const departments = [...new Set(appData.map(item => item.department))].sort();
+            const rooms = [...new Set(appData.map(item => item.gradeLevel))].sort();
+            document.getElementById('filterYear').innerHTML = '<option value="all">-- ทุกปี --</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+            document.getElementById('filterDepartment').innerHTML = '<option value="all">-- ทั้งหมด --</option>' + departments.map(d => `<option value="${d}">${d}</option>`).join('');
+            document.getElementById('adminRoomFilter').innerHTML = '<option value="all">-- ทุกระดับชั้น/ห้อง --</option>' + rooms.map(r => `<option value="${r}">${r}</option>`).join('');
+        }
+
+        function renderAdminHistoryTable() {
+            const year = document.getElementById('filterYear').value;
+            const term = document.getElementById('filterTerm').value;
+            const dept = document.getElementById('filterDepartment').value;
+            const status = document.getElementById('filterStatus').value;
+            const room = document.getElementById('adminRoomFilter').value;
+            let filtered = appData;
+            if (year !== 'all') filtered = filtered.filter(d => d.academicYear === year);
+            if (term !== 'all') filtered = filtered.filter(d => d.term === term);
+            if (dept !== 'all') filtered = filtered.filter(d => d.department === dept);
+            if (status !== 'all') filtered = filtered.filter(d => d.status === status);
+            if (room !== 'all') filtered = filtered.filter(d => d.gradeLevel === room);
+            filtered.sort((a,b) => b.id - a.id);
+            document.getElementById('filteredCountText').innerText = `พบ ${filtered.length} รายการ`;
+            const tbody = document.getElementById('adminHistoryTableBody');
+            if(!tbody) return;
+            if(!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = filtered.map(item => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm">
+                        <div class="font-bold text-gray-800">${formatDateThai(item.date)}</div>
+                        <div class="text-xs text-gray-500">เทอม ${item.term}/${item.academicYear}</div>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <div class="font-bold text-gray-800">${item.studentId} - ${item.studentName}</div>
+                        <div class="text-xs text-gray-500">ชั้น ${item.gradeLevel} เลขที่ ${item.studentNumber}</div>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <div class="font-medium text-gray-800">${item.subject}</div>
+                        <div class="text-xs text-gray-500">ครู: ${item.teacher} | ${item.department}</div>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            ${getTypeBadge(item.type)} <i class="fas fa-caret-right text-gray-400 mx-1"></i> <span class="font-bold bg-gray-100 px-2 py-0.5 rounded">${item.newGrade}</span>
+                        </div>
+                        ${item.remarks ? `<div class="text-xs text-red-500 mt-1 truncate max-w-[150px]" title="${item.remarks}">${item.remarks}</div>` : ''}
+                    </td>
+                    <td class="px-4 py-3 text-center">${getMethodBadge(item.correctionMethod)}</td>
+                    <td class="px-4 py-3 text-center">${getStatusBadge(item.status)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function resetAdminFilters() {
+            document.getElementById('filterYear').value = 'all';
+            document.getElementById('filterTerm').value = 'all';
+            document.getElementById('filterDepartment').value = 'all';
+            document.getElementById('filterStatus').value = 'all';
+            document.getElementById('adminRoomFilter').value = 'all';
+            renderAdminHistoryTable();
+        }
+
+        function generateReport() {
+            const reportType = document.getElementById('reportTypeSelector').value;
+            const container = document.getElementById('reportSubFilterContainer');
+            if (reportType === 'daily' || reportType === 'monthly') {
+                container.innerHTML = `
+                    <label class="block text-sm font-bold text-gray-700 mb-1">เลือกวันที่/เดือน</label>
+                    <input type="${reportType === 'daily' ? 'date' : 'month'}" id="reportDateValue" onchange="renderReportData()" class="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm shadow-sm" value="${reportType === 'daily' ? todayStr : todayStr.substring(0,7)}">
+                `;
+            } else if (reportType === 'term_year') {
+                const years = [...new Set(appData.map(item => item.academicYear))].sort((a, b) => b - a);
+                container.innerHTML = `
+                    <label class="block text-sm font-bold text-gray-700 mb-1">เลือกปีการศึกษา</label>
+                    <select id="reportYearValue" onchange="renderReportData()" class="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm shadow-sm">
+                        <option value="all">-- ทุกปีการศึกษา --</option>
+                        ${years.map(y => `<option value="${y}">${y}</option>`).join('')}
+                    </select>
+                `;
+            } else {
+                container.innerHTML = '';
+            }
+            renderReportData();
+        }
+
+        function renderReportData() {
+            const reportType = document.getElementById('reportTypeSelector').value;
+            const thead = document.getElementById('reportTableHeader');
+            const tbody = document.getElementById('reportTableBody');
+            let htmlHead = '', htmlBody = '';
+            const approvedData = appData.filter(d => d.status === 'approved');
+
+            if (reportType === 'daily' || reportType === 'monthly') {
+                const dateVal = document.getElementById('reportDateValue')?.value;
+                if(!dateVal) return;
+                const filtered = approvedData.filter(d => d.date.startsWith(dateVal));
+                htmlHead = `<tr>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">กลุ่มสาระฯ</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ 0</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ ร</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ มส</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ มผ</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase bg-gray-200">รวมทั้งหมด</th>
+                </tr>`;
+                const departments = [...new Set(approvedData.map(item => item.department))].sort();
+                let totals = { '0': 0, 'ร': 0, 'มส': 0, 'มผ': 0, 'all': 0 };
+                departments.forEach(dept => {
+                    const deptData = filtered.filter(d => d.department === dept);
+                    const c0 = deptData.filter(d => d.type === '0').length;
+                    const cr = deptData.filter(d => d.type === 'ร').length;
+                    const cms = deptData.filter(d => d.type === 'มส').length;
+                    const cmp = deptData.filter(d => d.type === 'มผ').length;
+                    const t = deptData.length;
+                    if(t > 0) {
+                        htmlBody += `<tr>
+                            <td class="px-4 py-3 font-medium text-sm">${dept}</td>
+                            <td class="px-4 py-3 text-center text-sm">${c0 || '-'}</td>
+                            <td class="px-4 py-3 text-center text-sm">${cr || '-'}</td>
+                            <td class="px-4 py-3 text-center text-sm">${cms || '-'}</td>
+                            <td class="px-4 py-3 text-center text-sm">${cmp || '-'}</td>
+                            <td class="px-4 py-3 text-center text-sm font-bold bg-gray-50">${t}</td>
+                        </tr>`;
+                        totals['0']+=c0; totals['ร']+=cr; totals['มส']+=cms; totals['มผ']+=cmp; totals['all']+=t;
+                    }
+                });
+                if(totals.all === 0) htmlBody = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลที่อนุมัติในช่างเวลานี้</td></tr>`;
+                else {
+                    htmlBody += `<tr class="bg-gray-100 font-bold">
+                        <td class="px-4 py-3 text-right">รวมทั้งสิ้น</td>
+                        <td class="px-4 py-3 text-center text-red-600">${totals['0']}</td>
+                        <td class="px-4 py-3 text-center text-orange-600">${totals['ร']}</td>
+                        <td class="px-4 py-3 text-center text-purple-600">${totals['มส']}</td>
+                        <td class="px-4 py-3 text-center text-gray-700">${totals['มผ']}</td>
+                        <td class="px-4 py-3 text-center text-blue-700 text-lg">${totals['all']}</td>
+                    </tr>`;
+                }
+            } else if (reportType === 'class_room') {
+                htmlHead = `<tr>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">ระดับชั้น/ห้อง</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ 0</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ ร</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ มส</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ มผ</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase bg-gray-200">รวมทั้งหมด</th>
+                </tr>`;
+                const rooms = [...new Set(approvedData.map(item => item.gradeLevel))].sort();
+                rooms.forEach(room => {
+                    const rData = approvedData.filter(d => d.gradeLevel === room);
+                    const c0 = rData.filter(d => d.type === '0').length;
+                    const cr = rData.filter(d => d.type === 'ร').length;
+                    const cms = rData.filter(d => d.type === 'มส').length;
+                    const cmp = rData.filter(d => d.type === 'มผ').length;
+                    const t = rData.length;
+                    if(t > 0) {
+                        htmlBody += `<tr>
+                            <td class="px-4 py-3 font-medium text-sm text-blue-800">${room}</td>
+                            <td class="px-4 py-3 text-center text-sm">${c0 || '-'}</td>
+                            <td class="px-4 py-3 text-center text-sm">${cr || '-'}</td>
+                            <td class="px-4 py-3 text-center text-sm">${cms || '-'}</td>
+                            <td class="px-4 py-3 text-center text-sm">${cmp || '-'}</td>
+                            <td class="px-4 py-3 text-center text-sm font-bold bg-gray-50">${t}</td>
+                        </tr>`;
+                    }
+                });
+            } else if (reportType === 'term_year') {
+                const yearFilter = document.getElementById('reportYearValue')?.value;
+                let dataToUse = approvedData;
+                if(yearFilter && yearFilter !== 'all') dataToUse = approvedData.filter(d => d.academicYear === yearFilter);
+                htmlHead = `<tr>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">ปีการศึกษา / เทอม</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">รูปแบบ: แก้เกรดเดิม</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">รูปแบบ: เรียนซ้ำ</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase bg-gray-200">รวมจำนวนรายการที่อนุมัติ</th>
+                </tr>`;
+                const groups = {};
+                dataToUse.forEach(d => {
+                    const key = `${d.academicYear} / ${d.term}`;
+                    if(!groups[key]) groups[key] = { old: 0, new: 0, total: 0 };
+                    if(d.correctionMethod === 'แก้เกรดเทอมที่ผ่านมา') groups[key].old++;
+                    else groups[key].new++;
+                    groups[key].total++;
+                });
+                Object.keys(groups).sort().forEach(k => {
+                    htmlBody += `<tr>
+                        <td class="px-4 py-3 font-bold text-sm">${k}</td>
+                        <td class="px-4 py-3 text-center text-sm text-blue-600">${groups[k].old || '-'}</td>
+                        <td class="px-4 py-3 text-center text-sm text-purple-600">${groups[k].new || '-'}</td>
+                        <td class="px-4 py-3 text-center text-sm font-black bg-gray-50">${groups[k].total}</td>
+                    </tr>`;
+                });
+            }
+            thead.innerHTML = htmlHead;
+            tbody.innerHTML = htmlBody || `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูล</td></tr>`;
+        }
+
+        function getDetailedExportFormat(data) {
+            return data.map(item => ({
+                'รหัสอ้างอิง': item.id,
+                'ปีการศึกษา': item.academicYear,
+                'ภาคเรียน': item.term,
+                'วันที่ดำเนินการ': formatDateThai(item.date),
+                'เวลา': item.time,
+                'รหัสนักเรียน': item.studentId,
+                'ชื่อ-นามสกุล': item.studentName,
+                'ระดับชั้น/ห้อง': item.gradeLevel,
+                'เลขที่': item.studentNumber,
+                'กลุ่มสาระการเรียนรู้': item.department,
+                'รายวิชา': item.subject,
+                'ครูผู้สอน': item.teacher,
+                'ประเภท (ที่แก้)': item.type,
+                'เกรดที่ได้หลังแก้': item.newGrade,
+                'รูปแบบการดำเนินการ': item.correctionMethod,
+                'คะแนน': item.score || '-',
+                'เวลาเรียนซ้ำ (%)': item.attendance || '-',
+                'หมายเหตุ': item.remarks || '-',
+                'สถานะ': item.status === 'approved' ? 'อนุมัติเรียบร้อย' : (item.status === 'pending' ? 'รอตรวจสอบ' : 'ตีกลับ/ไม่อนุมัติ')
+            }));
+        }
+
+        function exportExcel(type) {
+            let workbook = XLSX.utils.book_new();
+            let filename = '';
+            let exportData = [];
+
+            if (type === 'pending') {
+                exportData = getDetailedExportFormat(appData.filter(d => d.status === 'pending'));
+                filename = 'รายการรอตรวจสอบ_' + todayStr + '.xlsx';
+            } else if (type === 'history') {
+                const year = document.getElementById('filterYear').value;
+                const term = document.getElementById('filterTerm').value;
+                const dept = document.getElementById('filterDepartment').value;
+                const status = document.getElementById('filterStatus').value;
+                const room = document.getElementById('adminRoomFilter').value;
+
+                let filtered = appData;
+                if (year !== 'all') filtered = filtered.filter(d => d.academicYear === year);
+                if (term !== 'all') filtered = filtered.filter(d => d.term === term);
+                if (dept !== 'all') filtered = filtered.filter(d => d.department === dept);
+                if (status !== 'all') filtered = filtered.filter(d => d.status === status);
+                if (room !== 'all') filtered = filtered.filter(d => d.gradeLevel === room);
+                
+                exportData = getDetailedExportFormat(filtered);
+                filename = 'ประวัติข้อมูล_' + todayStr + '.xlsx';
+            } else if (type === 'teacher_history') {
+                const myData = appData.filter(d => d.teacher === currentTeacherName).sort((a,b) => b.id - a.id);
+                exportData = getDetailedExportFormat(myData);
+                filename = 'ประวัติการส่งของฉัน_' + todayStr + '.xlsx';
+            } else if (type === 'current_report') {
+                const table = document.getElementById('reportTableElement');
+                const ws = XLSX.utils.table_to_sheet(table);
+                XLSX.utils.book_append_sheet(workbook, ws, "Report");
+                XLSX.writeFile(workbook, 'รายงานสรุป_' + todayStr + '.xlsx');
+                return;
+            }
+
+            if(exportData.length === 0) {
+                Swal.fire('ข้อมูลว่างเปล่า', 'ไม่มีข้อมูลสำหรับนำออก', 'info');
+                return;
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+            XLSX.writeFile(workbook, filename);
+        }
+
+        function exportHomeroomExcel() {
+            const table = document.getElementById('homeroomTableElement');
+            const workbook = XLSX.utils.table_to_book(table, {sheet: "Homeroom"});
+            XLSX.writeFile(workbook, 'รายงานที่ปรึกษา_' + todayStr + '.xlsx');
+        }
+
+        function exportHomeroomPDF() {
+            document.getElementById('homeroomExportHeader').classList.remove('hidden');
+            document.getElementById('homeroomExportDate').innerText = formatDateThai(todayStr);
+            const element = document.getElementById('homeroomPrintArea');
+            const opt = {
+                margin: 0.5,
+                filename: 'รายงานที่ปรึกษา_' + todayStr + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.getElementById('homeroomExportHeader').classList.add('hidden');
+            });
+        }
+
+        function exportAnalyticsPDF() {
+            const element = document.getElementById('content-admin-analytics');
+            const opt = {
+                margin: 0.5,
+                filename: 'รายงานสถิติและวิเคราะห์_' + todayStr + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function populateAnalyticsSelectors() {
+            if (analyticsFiltersPopulated) return;
+            const years = [...new Set(appData.map(item => item.academicYear))].sort((a, b) => b - a);
+            const yrOptsAll = '<option value="all">-- ทุกปี --</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+            const yrOpts = years.map(y => `<option value="${y}">${y}</option>`).join(''); 
+            document.getElementById('analyticsGlobalYear').innerHTML = yrOptsAll;
+            document.getElementById('cmpYear1').innerHTML = '<option value="all">ทุกปี</option>' + yrOpts;
+            document.getElementById('cmpYear2').innerHTML = '<option value="all">ทุกปี</option>' + yrOpts;
+            if(years.length > 0) {
+                document.getElementById('cmpYear1').value = years[0];
+                document.getElementById('cmpTerm1').value = "1";
+                if(years.length > 1) {
+                    document.getElementById('cmpYear2').value = years[1];
+                    document.getElementById('cmpTerm2').value = "1";
+                } else {
+                    document.getElementById('cmpYear2').value = years[0];
+                    document.getElementById('cmpTerm2').value = "2";
+                }
+            }
+            analyticsFiltersPopulated = true;
+        }
+
+        function updateCharts() {
+            if (document.getElementById('content-admin-analytics').classList.contains('hidden')) return;
+            Chart.defaults.font.family = "'Sarabun', sans-serif";
+            Chart.defaults.color = '#4b5563';
+            
+            const gYear = document.getElementById('analyticsGlobalYear').value;
+            const gTerm = document.getElementById('analyticsGlobalTerm').value;
+            let globalData = appData;
+            if(gYear !== 'all') globalData = globalData.filter(d => d.academicYear === gYear);
+            if(gTerm !== 'all') globalData = globalData.filter(d => d.term === gTerm);
+
+            const statusCounts = { pending: 0, approved: 0, rejected: 0 };
+            globalData.forEach(d => { if(statusCounts[d.status] !== undefined) statusCounts[d.status]++; });
+            if(adminStatusChartInst) adminStatusChartInst.destroy();
+            const ctxStatus = document.getElementById('adminStatusChart').getContext('2d');
+            adminStatusChartInst = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['รอตรวจสอบ', 'อนุมัติแล้ว', 'ตีกลับ'],
+                    datasets: [{
+                        data: [statusCounts.pending, statusCounts.approved, statusCounts.rejected],
+                        backgroundColor: ['#fde047', '#4ade80', '#f87171'], borderWidth: 0, hoverOffset: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            const approvedGlobal = globalData.filter(d => d.status === 'approved');
+            const typeCounts = { '0': 0, 'ร': 0, 'มส': 0, 'มผ': 0 };
+            approvedGlobal.forEach(d => { if(typeCounts[d.type] !== undefined) typeCounts[d.type]++; });
+            if(adminTypeChartInst) adminTypeChartInst.destroy();
+            const ctxType = document.getElementById('adminTypeChart').getContext('2d');
+            adminTypeChartInst = new Chart(ctxType, {
+                type: 'pie',
+                data: {
+                    labels: ['แก้ 0', 'แก้ ร', 'แก้ มส', 'แก้ มผ'],
+                    datasets: [{
+                        data: [typeCounts['0'], typeCounts['ร'], typeCounts['มส'], typeCounts['มผ']],
+                        backgroundColor: ['#ef4444', '#f97316', '#a855f7', '#9ca3af'], borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            const y1 = document.getElementById('cmpYear1').value;
+            const t1 = document.getElementById('cmpTerm1').value;
+            const y2 = document.getElementById('cmpYear2').value;
+            const t2 = document.getElementById('cmpTerm2').value;
+            const lbl1 = (y1==='all' && t1==='all') ? 'ข้อมูลชุด 1 (ทั้งหมด)' : `เทอม ${t1==='all'?'รวม':t1}/${y1==='all'?'รวม':y1}`;
+            const lbl2 = (y2==='all' && t2==='all') ? 'ข้อมูลชุด 2 (ทั้งหมด)' : `เทอม ${t2==='all'?'รวม':t2}/${y2==='all'?'รวม':y2}`;
+
+            let data1 = appData.filter(d => d.status === 'approved');
+            if(y1 !== 'all') data1 = data1.filter(d => d.academicYear === y1);
+            if(t1 !== 'all') data1 = data1.filter(d => d.term === t1);
+            let data2 = appData.filter(d => d.status === 'approved');
+            if(y2 !== 'all') data2 = data2.filter(d => d.academicYear === y2);
+            if(t2 !== 'all') data2 = data2.filter(d => d.term === t2);
+
+            const classes = ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'];
+            const classD1 = [0,0,0,0,0,0], classD2 = [0,0,0,0,0,0];
+            data1.forEach(d => { const idx = classes.indexOf(d.gradeLevel.split('/')[0]); if(idx !== -1) classD1[idx]++; });
+            data2.forEach(d => { const idx = classes.indexOf(d.gradeLevel.split('/')[0]); if(idx !== -1) classD2[idx]++; });
+            if(adminCompareClassChartInst) adminCompareClassChartInst.destroy();
+            const ctxClassCmp = document.getElementById('adminCompareClassChart').getContext('2d');
+            adminCompareClassChartInst = new Chart(ctxClassCmp, {
+                type: 'bar',
+                data: { labels: classes, datasets: [
+                    { label: lbl1, data: classD1, backgroundColor: '#3b82f6', borderRadius: 4 },
+                    { label: lbl2, data: classD2, backgroundColor: '#a855f7', borderRadius: 4 }
+                ]},
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+
+            const types = ['0', 'ร', 'มส', 'มผ'];
+            const typeD1 = [0,0,0,0], typeD2 = [0,0,0,0];
+            data1.forEach(d => { const idx = types.indexOf(d.type); if(idx !== -1) typeD1[idx]++; });
+            data2.forEach(d => { const idx = types.indexOf(d.type); if(idx !== -1) typeD2[idx]++; });
+            if(adminCompareTypeChartInst) adminCompareTypeChartInst.destroy();
+            const ctxTypeCmp = document.getElementById('adminCompareTypeChart').getContext('2d');
+            adminCompareTypeChartInst = new Chart(ctxTypeCmp, {
+                type: 'bar',
+                data: { labels: types, datasets: [
+                    { label: lbl1, data: typeD1, backgroundColor: '#3b82f6', borderRadius: 4 },
+                    { label: lbl2, data: typeD2, backgroundColor: '#a855f7', borderRadius: 4 }
+                ]},
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        }
+
+        // Initialize App
+        window.onload = function() {
+            renderApp();
+        };
+    </script>
+</body>
+</html>
