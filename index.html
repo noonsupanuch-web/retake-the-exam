@@ -89,8 +89,8 @@
                     <div class="hidden md:block text-sm font-medium">
                         สถานะ: <span id="currentRoleText" class="bg-blue-600 px-3 py-1 rounded-full shadow-inner border border-blue-500">คุณครู</span>
                     </div>
-                    <button id="logoutTeacherBtn" onclick="logoutTeacher()" class="hidden bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-md font-bold shadow transition-colors">
-                        <i class="fas fa-sign-out-alt mr-1"></i>ออกจากระบบครู
+                    <button id="logoutBtn" onclick="logoutUser()" class="hidden bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-md font-bold shadow transition-colors">
+                        <i class="fas fa-sign-out-alt mr-1"></i>ออกจากระบบ
                     </button>
                     <select id="roleSelector" onchange="handleRoleSwitch(this.value)" class="bg-blue-800 hover:bg-blue-700 text-white text-sm rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent block p-2 border border-blue-600 outline-none transition-colors cursor-pointer font-medium shadow-sm">
                         <option value="teacher">👨‍🏫 มุมมอง: คุณครูผู้สอน</option>
@@ -380,7 +380,20 @@
 
         <!-- ADMIN VIEW -->
         <div id="adminView" class="hidden animate-fade-in">
-            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 mb-8">
+            <!-- สถานะยังไม่ได้ล็อกอิน (แอดมิน) -->
+            <div id="adminLoginPromptState" class="bg-white rounded-xl shadow-md border-4 border-purple-500 p-12 text-center mb-8 transition-all">
+                <div class="bg-purple-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user-shield text-5xl text-purple-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-purple-800 mb-2">กรุณาเข้าสู่ระบบงานวัดผล (Admin)</h2>
+                <p class="text-gray-600 mb-6">คุณต้องยืนยันตัวตนด้วยรหัสแอดมินก่อน จึงจะสามารถจัดการระบบได้</p>
+                <button onclick="promptAdminLogin(true)" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-xl text-lg shadow-md transition-transform transform hover:scale-105">
+                    <i class="fas fa-sign-in-alt mr-2"></i> กดเพื่อเข้าสู่ระบบงานวัดผล
+                </button>
+            </div>
+
+            <!-- สถานะล็อกอินแล้ว (แอดมิน) -->
+            <div id="adminContentState" class="hidden bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 mb-8">
                 <div class="border-b border-gray-200 bg-gray-50">
                     <nav class="flex overflow-x-auto custom-scrollbar" aria-label="Tabs">
                         <button onclick="switchTab('admin', 'pending')" id="tab-admin-pending" class="tab-active flex-1 py-4 px-4 text-center text-sm font-bold transition-colors duration-200 whitespace-nowrap relative border-r border-gray-200">
@@ -688,6 +701,50 @@
                         </div>
                     </div>
 
+                    <!-- การจัดการผู้ดูแลระบบ (Admin Accounts) -->
+                    <div class="bg-white rounded-xl shadow-sm border border-purple-200 p-6 mb-6 w-full">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 mb-4 gap-3">
+                            <h3 class="text-lg font-bold text-purple-800 flex items-center"><i class="fas fa-user-shield text-purple-600 mr-2"></i> ฐานข้อมูลบัญชีผู้ดูแลระบบ (Admin Accounts)</h3>
+                            <button onclick="syncAdminData()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm flex items-center transition-colors">
+                                <i class="fas fa-sync-alt mr-1.5"></i> ดึงข้อมูลแอดมินจาก Google Sheets
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">ลิงก์ Google Sheets (URL บัญชีแอดมิน)</label>
+                                <input type="text" id="adminAccountSheetUrl" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="https://docs.google.com/spreadsheets/d/.../edit?gid=...">
+                            </div>
+                        </div>
+
+                        <form id="addAdminForm" onsubmit="handleAddAdmin(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 bg-purple-50/60 p-4 rounded-lg border border-purple-100">
+                            <div><label class="block text-xs font-bold text-gray-700 mb-1">User (ชื่อผู้ใช้งาน) <span class="text-red-500">*</span></label><input type="text" id="addAdminUser" placeholder="เช่น admin" required class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none"></div>
+                            <div><label class="block text-xs font-bold text-gray-700 mb-1">รหัสผ่าน <span class="text-red-500">*</span></label><input type="text" id="addAdminPass" placeholder="เช่น noon@admin456" required class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none"></div>
+                            <div class="flex items-end">
+                                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold py-2 px-4 rounded shadow-sm transition-colors flex items-center justify-center">
+                                    <i class="fas fa-plus mr-1"></i> เพิ่ม/อัปเดตบัญชีแอดมิน
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-3">
+                            <h4 class="font-bold text-gray-700">รายชื่อแอดมินทั้งหมดในระบบ (<span id="adminDbCount">0</span> ท่าน)</h4>
+                        </div>
+
+                        <div class="table-container overflow-y-auto border border-gray-200 rounded-lg max-h-60 shadow-inner">
+                            <table class="min-w-full divide-y divide-gray-200 relative">
+                                <thead class="bg-gray-100 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="px-4 py-2.5 text-left text-xs font-bold text-gray-600 uppercase">User (ชื่อผู้ใช้)</th>
+                                        <th class="px-4 py-2.5 text-left text-xs font-bold text-gray-600 uppercase">รหัสผ่าน</th>
+                                        <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-600 uppercase">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100" id="adminDbTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- การจัดการครูผู้สอน -->
                     <div class="bg-white rounded-xl shadow-sm border border-emerald-200 p-6 mb-6 w-full">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 mb-4 gap-3">
@@ -857,11 +914,11 @@
     <script>
         const todayStr = new Date().toISOString().substring(0, 10);
         const STORAGE_KEY = 'grade_resolution_system_data';
-        const ADMIN_PASSWORD = 'noon@admin456';
-        const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzqtWJc7njkpbv-X4RB6kgTDrUcfUOERbEQ6WAqCK4FSaRzGzJCYrjprQH9mk95jz5a/exec';
+        const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3ztvHOzQ94BbUuhNkmTCVE_og4CbdiKPw1eOgVNdK3DVsrejszL-Ymn8rVc7yvV5E/exec';
         
         let currentTermConfig = JSON.parse(localStorage.getItem('current_term_config')) || { year: '2569', term: '1' };
-        let teacherDB = JSON.parse(localStorage.getItem('teacher_db_cache')) || [];
+        let teacherDB = JSON.parse(localStorage.getItem('teacher_db_cache')) || [{user: 'T012', name: 'คุณครู ทดสอบ', dob: '01/01/2540'}];
+        let adminDB = JSON.parse(localStorage.getItem('admin_db_cache')) || [{user: 'admin', pass: 'noon@admin456'}];
         
         let defaultAppData = [
             { id: 1, date: todayStr, time: '09:15', academicYear: '2569', term: '1', department: 'คณิตศาสตร์', teacher: 'ครูสมปอง สุขใจ', studentId: '65012', studentName: 'ด.ช.วิชัย รักเรียน', gradeLevel: 'ม.1/1', studentNumber: '5', subject: 'คณิตศาสตร์ (ค21101)', type: '0', newGrade: '1', remarks: '', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'pending' },
@@ -874,10 +931,12 @@
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
         function saveStudentDB() { localStorage.setItem('student_db_cache', JSON.stringify(studentDB)); }
         function saveTeacherDB() { localStorage.setItem('teacher_db_cache', JSON.stringify(teacherDB)); }
+        function saveAdminDB() { localStorage.setItem('admin_db_cache', JSON.stringify(adminDB)); }
 
         let currentRole = 'teacher';
         let currentTeacherName = '';
         let currentTeacherUser = '';
+        let currentAdminUser = false;
         let analyticsFiltersPopulated = false;
         let adminStatusChartInst, adminTypeChartInst, adminCompareClassChartInst, adminCompareTypeChartInst;
 
@@ -991,12 +1050,19 @@
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    const foundTeacher = teacherDB.find(t => t.user === result.value.user && t.dob === result.value.dob);
+                    let foundTeacher = teacherDB.find(t => t.user === result.value.user && t.dob === result.value.dob);
+                    
+                    // บัญชีสำรองฉุกเฉิน: ป้องกันกรณีฐานข้อมูล Google Sheets เชื่อมต่อไม่ได้
+                    if (!foundTeacher && result.value.user === 'T012' && result.value.dob === '01/01/2540') {
+                        foundTeacher = { user: 'T012', name: 'คุณครู ทดสอบ', dob: '01/01/2540' };
+                    }
+
                     if (foundTeacher) {
                         currentTeacherUser = foundTeacher.user;
                         currentTeacherName = foundTeacher.name;
                         document.getElementById('currentRoleText').innerHTML = `คุณครู: ${currentTeacherName}`;
-                        document.getElementById('logoutTeacherBtn').classList.remove('hidden');
+                        document.getElementById('logoutBtn').classList.remove('hidden');
+                        document.getElementById('logoutBtn').innerHTML = `<i class="fas fa-sign-out-alt mr-1"></i>ออกจากระบบครู`;
                         
                         document.getElementById('teacherLoginPromptState').classList.add('hidden');
                         document.getElementById('teacherContentState').classList.remove('hidden');
@@ -1013,40 +1079,104 @@
             });
         }
 
-        function logoutTeacher() {
-            currentTeacherUser = '';
-            currentTeacherName = '';
-            document.getElementById('currentRoleText').innerHTML = `คุณครู (ยังไม่เข้าระบบ)`;
-            document.getElementById('logoutTeacherBtn').classList.add('hidden');
+        function promptAdminLogin(isFirstLoad = false) {
+            if (currentRole !== 'admin') return;
             
-            document.getElementById('teacherLoginPromptState').classList.remove('hidden');
-            document.getElementById('teacherContentState').classList.add('hidden');
-            document.getElementById('teacherTableBody').innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">กรุณาเข้าสู่ระบบเพื่อดูประวัติ</td></tr>`;
-            promptTeacherLogin(true);
+            Swal.fire({
+                title: '<div class="text-2xl sm:text-3xl font-bold text-purple-700 mt-2 mb-1"><i class="fas fa-user-shield mr-2"></i> เข้าสู่ระบบงานวัดผล</div>',
+                html: `
+                    <div class="text-center space-y-5 pt-4 px-2 sm:px-6">
+                        <p class="text-sm text-gray-500 mb-4">กรุณากรอกชื่อผู้ใช้งานและรหัสผ่านสำหรับแอดมิน</p>
+                        <div class="flex flex-col items-center">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">User (ชื่อผู้ใช้งาน)</label>
+                            <input type="text" id="admin-user" class="w-full max-w-[320px] p-3 text-center border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 outline-none transition-all text-purple-800 font-bold text-lg placeholder-gray-300 shadow-sm" placeholder="เช่น admin">
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">รหัสผ่าน</label>
+                            <input type="password" id="admin-pass" class="w-full max-w-[320px] p-3 text-center border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 outline-none transition-all text-purple-800 font-bold text-lg placeholder-gray-300 shadow-sm" placeholder="กรอกรหัสผ่าน">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: !isFirstLoad,
+                confirmButtonText: '<i class="fas fa-sign-in-alt mr-2"></i> ยืนยันสิทธิ์',
+                cancelButtonText: 'ยกเลิก',
+                customClass: {
+                    container: 'font-sarabun',
+                    popup: 'rounded-2xl border-4 border-purple-500 bg-white shadow-2xl pb-8 pt-6',
+                    title: 'border-none',
+                    confirmButton: 'bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-10 rounded-xl text-lg shadow-md transition-transform transform hover:scale-105 mx-2 mt-6',
+                    cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-8 rounded-xl text-lg shadow-sm transition-colors mx-2 mt-6',
+                    actions: 'w-full justify-center flex-wrap gap-2'
+                },
+                buttonsStyling: false,
+                allowOutsideClick: !isFirstLoad,
+                allowEscapeKey: !isFirstLoad,
+                preConfirm: () => {
+                    const user = document.getElementById('admin-user').value.trim();
+                    const pass = document.getElementById('admin-pass').value.trim();
+                    if (!user || !pass) {
+                        Swal.showValidationMessage('กรุณากรอกข้อมูลให้ครบถ้วน');
+                        return false;
+                    }
+                    return { user, pass };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let foundAdmin = adminDB.find(a => a.user === result.value.user && a.pass === result.value.pass);
+                    
+                    // บัญชีสำรองฉุกเฉิน: ป้องกันกรณีฐานข้อมูล Google Sheets เชื่อมต่อไม่ได้
+                    if (!foundAdmin && result.value.user === 'admin' && result.value.pass === 'noon@admin456') {
+                        foundAdmin = { user: 'admin', pass: 'noon@admin456' };
+                    }
+
+                    if (foundAdmin) {
+                        currentAdminUser = true;
+                        document.getElementById('currentRoleText').innerHTML = `งานวัดผล (Admin)`;
+                        document.getElementById('logoutBtn').classList.remove('hidden');
+                        document.getElementById('logoutBtn').innerHTML = `<i class="fas fa-sign-out-alt mr-1"></i>ออกจากระบบแอดมิน`;
+                        
+                        document.getElementById('adminLoginPromptState').classList.add('hidden');
+                        document.getElementById('adminContentState').classList.remove('hidden');
+
+                        Swal.fire({ title: 'เข้าสู่ระบบสำเร็จ', text: 'ยินดีต้อนรับผู้ดูแลระบบ', icon: 'success', timer: 1500, showConfirmButton: false });
+                        renderApp();
+                    } else {
+                        Swal.fire({ title: 'เข้าสู่ระบบล้มเหลว', text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', icon: 'error', confirmButtonText: 'ลองอีกครั้ง' }).then(() => promptAdminLogin(isFirstLoad));
+                    }
+                } else if (result.dismiss === Swal.DismissReason.cancel && isFirstLoad) {
+                    document.getElementById('adminLoginPromptState').classList.remove('hidden');
+                    document.getElementById('adminContentState').classList.add('hidden');
+                }
+            });
+        }
+
+        function logoutUser() {
+            if (currentRole === 'teacher') {
+                currentTeacherUser = '';
+                currentTeacherName = '';
+                document.getElementById('currentRoleText').innerHTML = `คุณครู (ยังไม่เข้าระบบ)`;
+                document.getElementById('logoutBtn').classList.add('hidden');
+                
+                document.getElementById('teacherLoginPromptState').classList.remove('hidden');
+                document.getElementById('teacherContentState').classList.add('hidden');
+                document.getElementById('teacherTableBody').innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">กรุณาเข้าสู่ระบบเพื่อดูประวัติ</td></tr>`;
+                promptTeacherLogin(true);
+            } else {
+                currentAdminUser = false;
+                document.getElementById('currentRoleText').innerHTML = `แอดมิน (ยังไม่เข้าระบบ)`;
+                document.getElementById('logoutBtn').classList.add('hidden');
+                
+                document.getElementById('adminLoginPromptState').classList.remove('hidden');
+                document.getElementById('adminContentState').classList.add('hidden');
+                promptAdminLogin(true);
+            }
         }
 
         function handleRoleSwitch(role) {
+            switchRole(role);
             if (role === 'admin') {
-                Swal.fire({
-                    title: 'ยืนยันสิทธิ์ผู้ดูแลระบบ',
-                    text: 'กรุณากรอกรหัสผ่านสำหรับงานวัดผล',
-                    input: 'password',
-                    showCancelButton: true,
-                    confirmButtonText: 'ยืนยัน',
-                    cancelButtonText: 'ยกเลิก',
-                    confirmButtonColor: '#9333ea'
-                }).then((result) => {
-                    if (result.isConfirmed && result.value === ADMIN_PASSWORD) {
-                        switchRole('admin');
-                    } else if (result.isConfirmed) {
-                        Swal.fire('รหัสผ่านไม่ถูกต้อง', 'คุณไม่มีสิทธิ์เข้าถึงส่วนนี้', 'error');
-                        document.getElementById('roleSelector').value = currentRole;
-                    } else {
-                        document.getElementById('roleSelector').value = currentRole;
-                    }
-                });
+                if (!currentAdminUser) promptAdminLogin(true);
             } else {
-                switchRole('teacher');
                 if(!currentTeacherUser) promptTeacherLogin(true);
             }
         }
@@ -1088,11 +1218,12 @@
                 currentRoleText.className = 'bg-blue-600 px-3 py-1 rounded-full shadow-inner border border-blue-500 text-white text-xs font-bold';
                 
                 if(currentTeacherUser) {
-                    document.getElementById('logoutTeacherBtn').classList.remove('hidden');
+                    document.getElementById('logoutBtn').classList.remove('hidden');
+                    document.getElementById('logoutBtn').innerHTML = `<i class="fas fa-sign-out-alt mr-1"></i>ออกจากระบบครู`;
                     document.getElementById('teacherLoginPromptState').classList.add('hidden');
                     document.getElementById('teacherContentState').classList.remove('hidden');
                 } else {
-                    document.getElementById('logoutTeacherBtn').classList.add('hidden');
+                    document.getElementById('logoutBtn').classList.add('hidden');
                     document.getElementById('teacherLoginPromptState').classList.remove('hidden');
                     document.getElementById('teacherContentState').classList.add('hidden');
                 }
@@ -1100,9 +1231,19 @@
             } else {
                 document.getElementById('teacherView').classList.add('hidden');
                 document.getElementById('adminView').classList.remove('hidden');
-                currentRoleText.textContent = 'งานวัดผล (Admin)';
+                currentRoleText.innerHTML = currentAdminUser ? `งานวัดผล (Admin)` : 'แอดมิน (ยังไม่เข้าระบบ)';
                 currentRoleText.className = 'bg-purple-600 px-3 py-1 rounded-full shadow-inner border border-purple-500 text-white text-xs font-bold';
-                document.getElementById('logoutTeacherBtn').classList.add('hidden');
+                
+                if(currentAdminUser) {
+                    document.getElementById('logoutBtn').classList.remove('hidden');
+                    document.getElementById('logoutBtn').innerHTML = `<i class="fas fa-sign-out-alt mr-1"></i>ออกจากระบบแอดมิน`;
+                    document.getElementById('adminLoginPromptState').classList.add('hidden');
+                    document.getElementById('adminContentState').classList.remove('hidden');
+                } else {
+                    document.getElementById('logoutBtn').classList.add('hidden');
+                    document.getElementById('adminLoginPromptState').classList.remove('hidden');
+                    document.getElementById('adminContentState').classList.add('hidden');
+                }
                 switchTab('admin', 'pending');
             }
             renderApp();
@@ -1121,7 +1262,7 @@
                 if(tabName === 'history') populateAdminFilters();
                 if(tabName === 'reports') generateReport();
                 if(tabName === 'analytics') { populateAnalyticsSelectors(); updateCharts(); }
-                if(tabName === 'settings') { renderStudentDBTable(); renderTeacherDBTable(); }
+                if(tabName === 'settings') { renderStudentDBTable(); renderTeacherDBTable(); renderAdminDBTable(); }
             }
         }
 
@@ -1747,6 +1888,9 @@
                         const response = await fetch(targetUrl, { cache: 'no-cache' });
                         if (response.ok) {
                             text = await response.text();
+                            // ป้องกันการดึงหน้าเว็บ HTML มาทับฐานข้อมูล
+                            if (text && text.trim().toLowerCase().startsWith('<!doctype html>')) { text = ''; continue; }
+                            if (text && text.trim().toLowerCase().startsWith('<html')) { text = ''; continue; }
                             if (text && (text.includes(',') || text.includes('\n'))) break;
                         }
                     } catch (err) {}
@@ -1845,6 +1989,33 @@
             }
         }
 
+        async function syncAdminData(showMsg = true) {
+            const urlInputElem = document.getElementById('adminAccountSheetUrl');
+            const urlInput = urlInputElem ? urlInputElem.value.trim() : '';
+            if(urlInput) localStorage.setItem('admin_account_sheet_url', urlInput);
+            const url = urlInput || 'https://docs.google.com/spreadsheets/d/1q32UyPAgWtKHgw1q1w9y6zizxqxXweJDGtkE9ojMvOU/export?format=csv&gid=0';
+            
+            try {
+                let newData = [];
+                const rows = await fetchCsvFromGoogleSheet(url);
+                if(rows && rows.length > 1) {
+                    for(let i=1; i<rows.length; i++) { if(rows[i][0] && rows[i][1]) newData.push({ user: rows[i][0], pass: rows[i][1] }); }
+                }
+
+                if(newData.length > 0) {
+                    newData.forEach(newItem => {
+                        const existingIdx = adminDB.findIndex(a => a.user === newItem.user);
+                        if(existingIdx !== -1) adminDB[existingIdx] = newItem; else adminDB.push(newItem);
+                    });
+                    saveAdminDB();
+                    renderAdminDBTable();
+                    if(showMsg) Swal.fire({ title: 'สำเร็จ', text: `อัปเดตบัญชีแอดมิน ${newData.length} บัญชีแล้ว`, icon: 'success', timer: 1500, showConfirmButton: false });
+                }
+            } catch(e) {
+                 if(showMsg) Swal.fire('ล้มเหลว', 'ดึงข้อมูลบัญชีแอดมินไม่สำเร็จ', 'error');
+            }
+        }
+
         function handleAddStudent(e) {
             e.preventDefault();
             const newStu = { id: document.getElementById('addStuId').value, name: document.getElementById('addStuName').value, grade: document.getElementById('addStuGrade').value, room: document.getElementById('addStuRoom').value, no: document.getElementById('addStuNo').value };
@@ -1865,6 +2036,19 @@
             saveTeacherDB(); renderTeacherDBTable();
             document.querySelectorAll('#addTeacherForm').forEach(f => f.reset());
             Swal.fire({ title: 'สำเร็จ!', text: 'เพิ่มบัญชีครูเรียบร้อย', icon: 'success', timer: 1000, showConfirmButton: false });
+        }
+
+        function handleAddAdmin(e) {
+            e.preventDefault();
+            const newAdmin = { 
+                user: document.getElementById('addAdminUser').value, 
+                pass: document.getElementById('addAdminPass').value 
+            };
+            const idx = adminDB.findIndex(a => a.user === newAdmin.user);
+            if(idx !== -1) adminDB[idx] = newAdmin; else adminDB.push(newAdmin);
+            saveAdminDB(); renderAdminDBTable();
+            document.getElementById('addAdminForm').reset();
+            Swal.fire({ title: 'สำเร็จ!', text: 'เพิ่มบัญชีแอดมินเรียบร้อย', icon: 'success', timer: 1000, showConfirmButton: false });
         }
 
         function deleteStudentDB(id) {
@@ -1900,6 +2084,29 @@
                 if (result.isConfirmed) {
                     teacherDB = teacherDB.filter(t => t.user !== user);
                     saveTeacherDB(); renderTeacherDBTable();
+                    Swal.fire({ title: 'ลบแล้ว!', icon: 'success', timer: 1000, showConfirmButton: false });
+                }
+            });
+        }
+
+        function deleteAdminDB(user) {
+            Swal.fire({
+                title: 'ยืนยันลบบัญชีแอดมิน?',
+                text: 'User ' + user,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'ใช่, ลบทิ้ง',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if(adminDB.length <= 1) {
+                        Swal.fire('ลบไม่ได้', 'ต้องมีแอดมินอย่างน้อย 1 บัญชีในระบบ', 'error');
+                        return;
+                    }
+                    adminDB = adminDB.filter(a => a.user !== user);
+                    saveAdminDB(); renderAdminDBTable();
                     Swal.fire({ title: 'ลบแล้ว!', icon: 'success', timer: 1000, showConfirmButton: false });
                 }
             });
@@ -1948,6 +2155,22 @@
                     </tr>
                 `).join('');
             });
+        }
+
+        function renderAdminDBTable() {
+            const tbody = document.getElementById('adminDbTableBody');
+            if(!tbody) return;
+            
+            document.getElementById('adminDbCount').innerText = adminDB.length;
+            
+            if(!adminDB.length) { tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-6 text-center text-gray-500">ยังไม่มีข้อมูล</td></tr>`; return; }
+            tbody.innerHTML = adminDB.map(a => `
+                <tr class="hover:bg-purple-50">
+                    <td class="px-4 py-2 text-sm font-bold text-purple-700">${a.user}</td>
+                    <td class="px-4 py-2 text-sm text-gray-600">${a.pass}</td>
+                    <td class="px-4 py-2 text-sm text-center"><button onclick="deleteAdminDB('${a.user}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded" title="ลบ"><i class="fas fa-trash-alt"></i></button></td>
+                </tr>
+            `).join('');
         }
 
         function updateAppIcon(url) {
@@ -2053,6 +2276,9 @@
             const savedTchUrl = localStorage.getItem('admin_teacher_sheet_url');
             if(savedTchUrl && document.getElementById('adminTeacherSheetUrl')) document.getElementById('adminTeacherSheetUrl').value = savedTchUrl;
 
+            const savedAdmUrl = localStorage.getItem('admin_account_sheet_url');
+            if(savedAdmUrl && document.getElementById('adminAccountSheetUrl')) document.getElementById('adminAccountSheetUrl').value = savedAdmUrl;
+
             const savedIcon = localStorage.getItem('custom_app_icon');
             if(savedIcon) {
                 if(document.getElementById('adminAppIconUrl')) document.getElementById('adminAppIconUrl').value = savedIcon;
@@ -2072,6 +2298,8 @@
 
             if (studentDB.length === 0) syncStudentData();
             if (teacherDB.length === 0) syncTeacherData(false);
+            if (adminDB.length <= 1 && adminDB[0].user === 'admin') syncAdminData(false);
+            
             if (!currentTeacherUser && currentRole === 'teacher') setTimeout(() => promptTeacherLogin(true), 500);
         };
     </script>
