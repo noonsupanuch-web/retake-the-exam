@@ -89,6 +89,9 @@
                     <div class="hidden md:block text-sm font-medium">
                         สถานะ: <span id="currentRoleText" class="bg-blue-600 px-3 py-1 rounded-full shadow-inner border border-blue-500">คุณครู</span>
                     </div>
+                    <button id="logoutTeacherBtn" onclick="logoutTeacher()" class="hidden bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-md font-bold shadow transition-colors">
+                        <i class="fas fa-sign-out-alt mr-1"></i>ออกจากระบบครู
+                    </button>
                     <select id="roleSelector" onchange="handleRoleSwitch(this.value)" class="bg-blue-800 hover:bg-blue-700 text-white text-sm rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent block p-2 border border-blue-600 outline-none transition-colors cursor-pointer font-medium shadow-sm">
                         <option value="teacher">👨‍🏫 มุมมอง: คุณครูผู้สอน</option>
                         <option value="admin">👨‍💻 มุมมอง: งานวัดผล (Admin)</option>
@@ -102,7 +105,20 @@
         
         <!-- TEACHER VIEW -->
         <div id="teacherView" class="block animate-fade-in">
-            <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8 border border-gray-100">
+            <!-- สถานะยังไม่ได้ล็อกอิน -->
+            <div id="teacherLoginPromptState" class="bg-white rounded-xl shadow-md border-4 border-green-500 p-12 text-center mb-8 transition-all">
+                <div class="bg-green-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-chalkboard-teacher text-5xl text-green-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-green-800 mb-2">กรุณาเข้าสู่ระบบเพื่อดำเนินการ</h2>
+                <p class="text-gray-600 mb-6">คุณต้องยืนยันตัวตนด้วยรหัสครูผู้สอนก่อน จึงจะสามารถบันทึกและดูข้อมูลได้</p>
+                <button onclick="promptTeacherLogin(true)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl text-lg shadow-md transition-transform transform hover:scale-105">
+                    <i class="fas fa-sign-in-alt mr-2"></i> กดเพื่อเข้าสู่ระบบครูผู้สอน
+                </button>
+            </div>
+
+            <!-- สถานะล็อกอินแล้ว -->
+            <div id="teacherContentState" class="hidden bg-white rounded-xl shadow-md overflow-hidden mb-8 border border-gray-100">
                 <div class="border-b border-gray-200 bg-gray-50/50">
                     <nav class="flex -mb-px" aria-label="Tabs">
                         <button onclick="switchTab('teacher', 'form')" id="tab-teacher-form" class="tab-active w-1/2 py-4 px-1 text-center text-sm font-medium transition-colors duration-200">
@@ -144,6 +160,10 @@
                         <div id="normalFormSection" class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                                 <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">รหัสนักเรียน <span class="text-red-500">*</span> <span class="text-xs text-blue-500 font-normal ml-1">(พิมพ์แล้วกด Enter เพื่อดึงข้อมูล)</span></label>
+                                    <input type="text" id="input-studentId" name="studentId" onchange="autofillNormalForm()" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 65001" autocomplete="on">
+                                </div>
+                                <div class="md:col-span-2">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">ปีการศึกษา <span class="text-red-500">*</span></label>
                                     <input type="number" id="input-academicYear" name="academicYear" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 2569" autocomplete="on">
                                 </div>
@@ -153,10 +173,6 @@
                                         <option value="1">1</option>
                                         <option value="2">2</option>
                                     </select>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1">รหัสนักเรียน <span class="text-red-500">*</span> <span class="text-xs text-blue-500 font-normal ml-1">(พิมพ์แล้วกด Enter เพื่อดึงข้อมูล)</span></label>
-                                    <input type="text" id="input-studentId" name="studentId" onchange="autofillNormalForm()" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 65001" autocomplete="on">
                                 </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
@@ -199,7 +215,6 @@
                                 </div>
                                 <div class="md:col-span-1">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">เกรดที่ได้ <span class="text-red-500">*</span></label>
-                                    <!-- เกรดที่ได้มีแค่ 1 และ ผ -->
                                     <select id="input-newGrade" name="newGrade" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                         <option value="" disabled selected>-- เลือกเกรด --</option>
                                         <option value="1">1</option>
@@ -295,7 +310,6 @@
                                 </div>
                             </div>
                             
-                            <!-- ส่วนที่เพิ่มเติม: สรุปผลการเรียนและบันทึกคะแนน -->
                             <div>
                                 <h2 class="text-lg font-semibold border-b-2 border-green-500 pb-2 mb-4 text-green-700">3. สรุปผลการเรียนและคะแนน</h2>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -309,7 +323,6 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">เกรดที่ได้หลังลงเรียนซ้ำ <span class="text-red-500">*</span></label>
-                                        <!-- เกรดที่ได้มีแค่ 1 และ ผ -->
                                         <select id="retake-newGrade" name="retakeNewGrade" data-req="true" class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500 bg-gray-50">
                                             <option value="" disabled selected>-- เลือกเกรด --</option>
                                             <option value="1">1</option>
@@ -442,11 +455,12 @@
                             <span><i class="fas fa-filter mr-2 text-blue-500"></i>ตัวกรองข้อมูลขั้นสูง</span>
                             <span id="filteredCountText" class="text-xs font-bold text-blue-700 bg-blue-100 px-3 py-1 rounded-full border border-blue-200">พบ 0 รายการ</span>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                             <div><label class="block text-xs font-semibold text-gray-600 mb-1">ปีการศึกษา</label><select id="filterYear" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทุกปี --</option></select></div>
                             <div><label class="block text-xs font-semibold text-gray-600 mb-1">ภาคเรียน</label><select id="filterTerm" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทุกเทอม --</option><option value="1">เทอม 1</option><option value="2">เทอม 2</option></select></div>
                             <div><label class="block text-xs font-semibold text-gray-600 mb-1">ระดับชั้น/ห้องเรียน</label><select id="adminRoomFilter" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทุกระดับชั้น/ห้อง --</option></select></div>
                             <div><label class="block text-xs font-semibold text-gray-600 mb-1">กลุ่มสาระฯ / วิชา</label><select id="filterDepartment" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทั้งหมด --</option></select></div>
+                            <div><label class="block text-xs font-semibold text-gray-600 mb-1">ครูผู้สอน</label><select id="filterTeacher" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทุกคน --</option></select></div>
                             <div><label class="block text-xs font-semibold text-gray-600 mb-1">สถานะ</label><select id="filterStatus" onchange="renderAdminHistoryTable()" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="all">-- ทุกสถานะ --</option><option value="pending">รอตรวจสอบ</option><option value="approved">อนุมัติแล้ว</option><option value="rejected">ตีกลับ</option></select></div>
                         </div>
                         <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
@@ -596,17 +610,142 @@
                     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 border-l-4 border-gray-500 pl-4 gap-4">
                         <div>
                             <h2 class="text-xl font-bold text-gray-800">ตั้งค่าระบบ (System Settings)</h2>
-                            <p class="text-sm text-gray-500">จัดการฐานข้อมูลรายชื่อนักเรียนสำหรับการกรอกข้อมูลอัตโนมัติ</p>
+                            <p class="text-sm text-gray-500">จัดการฐานข้อมูลรายชื่อนักเรียนและข้อมูลการเข้าใช้ของคุณครูผู้สอน</p>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-3xl">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-database text-blue-500 mr-2"></i> ฐานข้อมูลรายชื่อนักเรียน (Autofill)</h3>
-                        <div class="space-y-4">
+                    <!-- การจัดการปีการศึกษาและภาคเรียน -->
+                    <div class="bg-white rounded-xl shadow-sm border border-orange-200 p-6 mb-6 w-full">
+                        <h3 class="text-lg font-bold text-orange-800 mb-4 border-b pb-2"><i class="fas fa-calendar-alt text-orange-600 mr-2"></i> จัดการปีการศึกษาและภาคเรียนปัจจุบัน</h3>
+                        <p class="text-sm text-gray-600 mb-4">กำหนดเทอมปัจจุบันเพื่อเป็นค่าเริ่มต้นให้ครูทุกคน และสามารถกด "ปิดเทอม" เพื่อนำออกข้อมูลไปเก็บใน Google Drive</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-1">ลิงก์ Google Sheets (URL)</label>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">ปีการศึกษาปัจจุบัน (Default)</label>
+                                <input type="number" id="setting-current-year" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="เช่น 2569">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">ภาคเรียนปัจจุบัน (Default)</label>
+                                <select id="setting-current-term" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-orange-500 outline-none">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="saveTermSettings()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm transition-colors text-sm flex items-center">
+                                <i class="fas fa-save mr-2"></i> บันทึกเทอมปัจจุบัน
+                            </button>
+                            <button onclick="archiveToDrive()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm transition-colors text-sm flex items-center">
+                                <i class="fab fa-google-drive mr-2 text-lg"></i> ปิดเทอม & นำออกข้อมูลไป Google Drive
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ตั้งค่าไอคอนแอปพลิเคชัน -->
+                    <div class="bg-white rounded-xl shadow-sm border border-pink-200 p-6 mb-6 w-full">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-icons text-pink-500 mr-2"></i> ตั้งค่าไอคอนแอปพลิเคชัน (Add to Home Screen)</h3>
+                        <p class="text-sm text-gray-500 mb-4">กำหนดรูปลิงก์ไอคอนเมื่อผู้ใช้นำเว็บไปบันทึกไว้บนหน้าจอโฮมโทรศัพท์ (รองรับลิงก์รูปภาพนามสกุล .PNG หรือ .JPG)</p>
+                        <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                            <div class="w-16 h-16 bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0" id="iconPreviewContainer">
+                                <i class="fas fa-image text-gray-400 text-2xl" id="iconPreviewPlaceholder"></i>
+                                <img id="iconPreviewImage" class="hidden w-full h-full object-cover">
+                            </div>
+                            <div class="w-full">
+                                <input type="text" id="adminAppIconUrl" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-pink-500 outline-none" placeholder="วางลิงก์รูปภาพไอคอน เช่น https://example.com/icon.png">
+                                <div class="mt-2 flex gap-2">
+                                    <button onclick="saveAppIcon()" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm">
+                                        <i class="fas fa-save mr-1"></i> บันทึกไอคอน
+                                    </button>
+                                    <button onclick="resetAppIcon()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm">
+                                        คืนค่าเริ่มต้น
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ฐานข้อมูล Google Apps Script -->
+                    <div class="bg-white rounded-xl shadow-sm border border-indigo-200 p-6 mb-6 w-full">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-cloud text-indigo-500 mr-2"></i> บันทึกข้อมูลแบบเรียลไทม์ (Google Apps Script)</h3>
+                        <p class="text-sm text-gray-600 mb-4">ระบบถูกตั้งค่าเชื่อมต่อเรียบร้อยแล้ว หากมีการเปลี่ยนไฟล์ Google Sheet ในอนาคต สามารถนำลิงก์ Web App URL ใหม่มาวางเปลี่ยนได้ที่นี่</p>
+                        
+                        <div class="space-y-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Web App URL (Apps Script)</label>
+                                <input type="text" id="appsScriptUrl" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="https://script.google.com/macros/s/.../exec">
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="saveAppsScriptUrl()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm">
+                                    <i class="fas fa-save mr-1"></i> บันทึกลิงก์เชื่อมต่อ
+                                </button>
+                                <button onclick="uploadAllToCloud()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm">
+                                    <i class="fas fa-cloud-upload-alt mr-1"></i> ดันข้อมูลขึ้น Cloud (แทนที่ข้อมูลเดิม)
+                                </button>
+                                <button onclick="downloadFromCloud()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm">
+                                    <i class="fas fa-cloud-download-alt mr-1"></i> โหลดข้อมูลจาก Cloud มาใส่ในระบบ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- การจัดการครูผู้สอน -->
+                    <div class="bg-white rounded-xl shadow-sm border border-emerald-200 p-6 mb-6 w-full">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 mb-4 gap-3">
+                            <h3 class="text-lg font-bold text-emerald-800 flex items-center"><i class="fas fa-chalkboard-teacher text-emerald-600 mr-2"></i> ฐานข้อมูลและบัญชีครูผู้สอน (Teacher Accounts)</h3>
+                            <button onclick="syncTeacherData()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm flex items-center transition-colors">
+                                <i class="fas fa-sync-alt mr-1.5"></i> ดึงข้อมูลครูจาก Google Sheets
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">ลิงก์ Google Sheets (URL บัญชีครูผู้สอน)</label>
+                                <input type="text" id="adminTeacherSheetUrl" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="https://docs.google.com/spreadsheets/d/.../edit?gid=...">
+                            </div>
+                        </div>
+
+                        <form id="addTeacherForm" onsubmit="handleAddTeacher(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6 bg-emerald-50/60 p-4 rounded-lg border border-emerald-100">
+                            <div><label class="block text-xs font-bold text-gray-700 mb-1">User (รหัสผู้ใช้งาน) <span class="text-red-500">*</span></label><input type="text" id="addTeachUser" placeholder="เช่น T012" required class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                            <div><label class="block text-xs font-bold text-gray-700 mb-1">ชื่อ-นามสกุล ครู <span class="text-red-500">*</span></label><input type="text" id="addTeachName" required class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                            <div><label class="block text-xs font-bold text-gray-700 mb-1">รหัสผ่าน (วันเกิด) <span class="text-red-500">*</span></label><input type="text" id="addTeachPass" placeholder="เช่น 01/01/2540" required class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                            <div class="flex items-end">
+                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-2 px-4 rounded shadow-sm transition-colors flex items-center justify-center">
+                                    <i class="fas fa-plus mr-1"></i> เพิ่ม/อัปเดตบัญชีครู
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-3">
+                            <h4 class="font-bold text-gray-700">รายชื่อครูทั้งหมดในระบบ (<span id="teachDbCount">0</span> ท่าน)</h4>
+                            <div class="relative w-full sm:w-64">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-gray-400 text-sm"></i></div>
+                                <input type="text" id="searchTeachDb" onkeyup="renderTeacherDBTable()" placeholder="ค้นหารหัสครู, ชื่อ..." class="w-full text-sm pl-9 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                            </div>
+                        </div>
+
+                        <div class="table-container overflow-y-auto border border-gray-200 rounded-lg max-h-60 shadow-inner">
+                            <table class="min-w-full divide-y divide-gray-200 relative">
+                                <thead class="bg-gray-100 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="px-4 py-2.5 text-left text-xs font-bold text-gray-600 uppercase">User (รหัสครู)</th>
+                                        <th class="px-4 py-2.5 text-left text-xs font-bold text-gray-600 uppercase">ชื่อ-นามสกุล</th>
+                                        <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-600 uppercase">รหัสผ่าน (วันเกิด)</th>
+                                        <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-600 uppercase">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100" id="teacherDbTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ฐานข้อมูลนักเรียน -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 w-full">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-user-plus text-green-500 mr-2"></i> จัดการข้อมูลนักเรียนในระบบ (Autofill)</h3>
+                        
+                        <div class="space-y-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">ลิงก์ Google Sheets (URL รายชื่อนักเรียน)</label>
                                 <input type="text" id="adminSheetUrl" class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://docs.google.com/spreadsheets/d/.../edit?gid=...">
-                                <p class="text-xs text-gray-500 mt-1">ตั้งค่าการแชร์ไฟล์เป็น <span class="font-bold text-green-600">"ทุกคนที่มีลิงก์ (Anyone with the link) -> ผู้มีสิทธิ์อ่าน (Viewer)"</span> โดยระบบจะดึงจาก ชื่อ-นามสกุล, เลขประจำตัว, ชั้น, ห้อง, เลขที่</p>
                             </div>
                             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-2 gap-4">
                                 <div class="text-sm">
@@ -618,11 +757,7 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6 w-full">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-user-plus text-green-500 mr-2"></i> จัดการข้อมูลนักเรียนในระบบ และแสดงรายชื่อ</h3>
-                        
                         <form id="addStudentForm" onsubmit="handleAddStudent(event)" class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-100">
                             <div class="md:col-span-1"><label class="block text-xs font-bold text-gray-700 mb-1">เลขประจำตัว <span class="text-red-500">*</span></label><input type="text" id="addStuId" required class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div>
                             <div class="md:col-span-2"><label class="block text-xs font-bold text-gray-700 mb-1">ชื่อ-นามสกุล <span class="text-red-500">*</span></label><input type="text" id="addStuName" required class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div>
@@ -660,10 +795,12 @@
                             </table>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
 
+        <!-- HOMEROOM TRACKING SECTION -->
         <div id="homeroomTrackingSection" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8 animate-fade-in">
             <div class="bg-indigo-700 px-6 py-4 flex flex-col md:flex-row justify-between items-center">
                 <h2 class="text-lg font-bold text-white flex items-center">
@@ -721,247 +858,198 @@
         const todayStr = new Date().toISOString().substring(0, 10);
         const STORAGE_KEY = 'grade_resolution_system_data';
         const ADMIN_PASSWORD = 'noon@admin456';
+        const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzqtWJc7njkpbv-X4RB6kgTDrUcfUOERbEQ6WAqCK4FSaRzGzJCYrjprQH9mk95jz5a/exec';
         
-        // --- ส่วนระบบ Autofill จาก Google Sheets ---
+        let currentTermConfig = JSON.parse(localStorage.getItem('current_term_config')) || { year: '2569', term: '1' };
+        let teacherDB = JSON.parse(localStorage.getItem('teacher_db_cache')) || [];
+        
+        let defaultAppData = [
+            { id: 1, date: todayStr, time: '09:15', academicYear: '2569', term: '1', department: 'คณิตศาสตร์', teacher: 'ครูสมปอง สุขใจ', studentId: '65012', studentName: 'ด.ช.วิชัย รักเรียน', gradeLevel: 'ม.1/1', studentNumber: '5', subject: 'คณิตศาสตร์ (ค21101)', type: '0', newGrade: '1', remarks: '', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'pending' },
+            { id: 2, date: todayStr, time: '10:30', academicYear: '2569', term: '1', department: 'วิทยาศาสตร์และเทคโนโลยี', teacher: 'ครูมานี ดีงาม', studentId: '65023', studentName: 'ด.ญ.สุดา น่ารัก', gradeLevel: 'ม.2/1', studentNumber: '12', subject: 'วิทยาศาสตร์ (ว21101)', type: 'ร', newGrade: '1', remarks: 'ได้เกรด 1.5 โทรแจ้งวัดผลแล้ว', correctionMethod: 'ลงทะเบียนเรียนซ้ำ', attendance: 85, score: 55, status: 'pending' }
+        ];
+
+        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultAppData;
         let studentDB = JSON.parse(localStorage.getItem('student_db_cache')) || [];
-        let defaultSheetUrl = 'https://docs.google.com/spreadsheets/d/1wN_qcHFc6Th7huxkmG8RDna41VKJuAps/edit?gid=1349736231#gid=1349736231';
-        let savedSheetUrl = localStorage.getItem('student_sheet_url') || defaultSheetUrl;
-        
-        async function syncStudentData(isAuto = false) {
-            let urlToFetch = savedSheetUrl;
-            if(!isAuto) {
-                const inputVal = document.getElementById('adminSheetUrl').value.trim();
-                if(!inputVal) {
-                    Swal.fire('ข้อผิดพลาด', 'กรุณาระบุ URL ของ Google Sheets', 'error');
-                    return;
-                }
-                urlToFetch = inputVal;
-                
-                Swal.fire({
-                    title: 'กำลังดึงข้อมูล...',
-                    text: 'กรุณารอสักครู่ระบบกำลังเชื่อมต่อ Google Sheets',
-                    allowOutsideClick: false,
-                    didOpen: () => { Swal.showLoading(); }
-                });
-            }
 
-            try {
-                const sheetIdMatch = urlToFetch.match(/\/d\/([a-zA-Z0-9-_]+)/);
-                const gidMatch = urlToFetch.match(/[#&?]gid=([0-9]+)/);
-                
-                if(!sheetIdMatch) throw new Error('รูปแบบ URL ไม่ถูกต้อง ไม่พบ Sheet ID');
-                
-                const sheetId = sheetIdMatch[1];
-                const gid = gidMatch ? gidMatch[1] : '0';
-                
-                const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
-                const res = await fetch(exportUrl);
-                if(!res.ok) throw new Error('ไม่สามารถเข้าถึงไฟล์ได้ (ตรวจสอบสิทธิ์การแชร์)');
-                
-                const csvText = await res.text();
-                
-                // แยกแถวและคอลัมน์แบบง่าย (รองรับ comma ในเครื่องหมายคำพูด)
-                const rows = csvText.split(/\r?\n/).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
-                if(rows.length < 2) throw new Error('ไม่พบข้อมูลในไฟล์ (หรือไฟล์ว่างเปล่า)');
-                
-                const headers = rows[0].map(h => h ? h.replace(/"/g, '').trim() : '');
-                
-                // ค้นหาตำแหน่งคอลัมน์จาก Header
-                let idIdx = -1, nameIdx = -1, gradeIdx = -1, roomIdx = -1, noIdx = -1;
-                headers.forEach((h, i) => {
-                    if(h.includes('เลขประจำตัว') || h.includes('รหัส')) idIdx = i;
-                    else if(h.includes('ชื่อ') || h.includes('นามสกุล')) nameIdx = i;
-                    else if(h.includes('ชั้น') || h.includes('ระดับ')) gradeIdx = i;
-                    else if(h.includes('ห้อง')) roomIdx = i;
-                    else if(h.includes('เลขที่')) noIdx = i;
-                });
-                
-                if(idIdx === -1) idIdx = 0; 
-                if(nameIdx === -1) nameIdx = 1;
-                
-                const newStudents = rows.slice(1).map(row => {
-                    if(!row || row.length <= idIdx) return null;
-                    return {
-                        id: row[idIdx] ? row[idIdx].replace(/"/g, '').trim() : '',
-                        name: nameIdx !== -1 && row[nameIdx] ? row[nameIdx].replace(/"/g, '').trim() : '',
-                        grade: gradeIdx !== -1 && row[gradeIdx] ? row[gradeIdx].replace(/"/g, '').trim() : '',
-                        room: roomIdx !== -1 && row[roomIdx] ? row[roomIdx].replace(/"/g, '').trim() : '',
-                        number: noIdx !== -1 && row[noIdx] ? row[noIdx].replace(/"/g, '').trim() : ''
-                    }
-                }).filter(item => item && item.id !== '');
+        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
+        function saveStudentDB() { localStorage.setItem('student_db_cache', JSON.stringify(studentDB)); }
+        function saveTeacherDB() { localStorage.setItem('teacher_db_cache', JSON.stringify(teacherDB)); }
 
-                // นำข้อมูลใหม่มาผสานกับฐานข้อมูลเดิมในระบบ
-                let addedCount = 0, updatedCount = 0;
-                newStudents.forEach(ns => {
-                    const idx = studentDB.findIndex(s => s.id === ns.id);
-                    if(idx > -1) { studentDB[idx] = ns; updatedCount++; }
-                    else { studentDB.push(ns); addedCount++; }
-                });
-                
-                localStorage.setItem('student_db_cache', JSON.stringify(studentDB));
-                
-                if(!isAuto) {
-                    savedSheetUrl = urlToFetch;
-                    localStorage.setItem('student_sheet_url', savedSheetUrl);
-                    updateSettingsUI();
-                    Swal.fire('สำเร็จ!', `อัปเดตข้อมูลเสร็จสิ้น<br><span class="text-sm text-green-600">เพิ่มจากตาราง: ${addedCount} คน | อัปเดตข้อมูล: ${updatedCount} คน</span>`, 'success');
-                }
-                console.log(`โหลดข้อมูลนักเรียนสำเร็จจำนวน ${studentDB.length} รายการ`);
-            } catch(e) {
-                console.warn("ไม่สามารถโหลดข้อมูลนักเรียนจาก Google Sheets ได้:", e);
-                if(!isAuto) {
-                    Swal.fire('เกิดข้อผิดพลาด', e.message || 'ไม่สามารถดึงข้อมูลได้', 'error');
-                }
-            }
+        let currentRole = 'teacher';
+        let currentTeacherName = '';
+        let currentTeacherUser = '';
+        let analyticsFiltersPopulated = false;
+        let adminStatusChartInst, adminTypeChartInst, adminCompareClassChartInst, adminCompareTypeChartInst;
+
+        // --- Term Management ---
+        function saveTermSettings() {
+            const y = document.getElementById('setting-current-year').value;
+            const t = document.getElementById('setting-current-term').value;
+            if(!y) { Swal.fire('แจ้งเตือน', 'กรุณาระบุปีการศึกษา', 'warning'); return; }
+            currentTermConfig = { year: y, term: t };
+            localStorage.setItem('current_term_config', JSON.stringify(currentTermConfig));
+            applyTermSettingsToForm();
+            Swal.fire({title:'บันทึกสำเร็จ', text:'อัปเดตปีการศึกษา/ภาคเรียนปัจจุบันแล้ว', icon:'success', timer:1500, showConfirmButton: false});
         }
 
-        function updateSettingsUI() {
-            const urlInput = document.getElementById('adminSheetUrl');
-            const statusText = document.getElementById('studentDbStatus');
-            if(urlInput) urlInput.value = savedSheetUrl;
-            if(statusText) statusText.innerText = `มีข้อมูลนักเรียน ${studentDB.length} คน`;
-            renderStudentDBTable();
+        function applyTermSettingsToForm() {
+            if(document.getElementById('input-academicYear')) document.getElementById('input-academicYear').value = currentTermConfig.year;
+            if(document.getElementById('input-term')) document.getElementById('input-term').value = currentTermConfig.term;
+            if(document.getElementById('retake-academicYear')) document.getElementById('retake-academicYear').value = currentTermConfig.year;
+            if(document.getElementById('retake-term')) document.getElementById('retake-term').value = currentTermConfig.term;
+            
+            if(document.getElementById('setting-current-year')) document.getElementById('setting-current-year').value = currentTermConfig.year;
+            if(document.getElementById('setting-current-term')) document.getElementById('setting-current-term').value = currentTermConfig.term;
         }
 
-        function renderStudentDBTable() {
-            const query = document.getElementById('searchStuDb')?.value.toLowerCase() || '';
-            const tbody = document.getElementById('studentDbTableBody');
-            const countEl = document.getElementById('stuDbCount');
-            if(!tbody) return;
-            
-            let filtered = studentDB;
-            if(query) {
-                filtered = studentDB.filter(s => s.id.includes(query) || s.name.toLowerCase().includes(query));
-            }
-            if(countEl) countEl.innerText = studentDB.length;
-            
-            if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-gray-500">ไม่พบรายชื่อนักเรียน</td></tr>`;
-                return;
-            }
-            
-            // แสดงแค่ 300 แถวเพื่อให้ไม่ค้าง หากต้องการค้นหาสามารถพิมพ์ค้นหาได้
-            const displayData = filtered.slice(0, 300); 
-            
-            tbody.innerHTML = displayData.map(s => `
-                <tr class="hover:bg-indigo-50/40">
-                    <td class="px-4 py-2 text-sm font-bold text-gray-800">${s.id}</td>
-                    <td class="px-4 py-2 text-sm text-gray-700">${s.name}</td>
-                    <td class="px-4 py-2 text-sm text-center text-gray-600 bg-gray-50">${s.grade || '-'}${s.room ? '/'+s.room : ''}</td>
-                    <td class="px-4 py-2 text-sm text-center text-gray-600">${s.number || '-'}</td>
-                    <td class="px-4 py-2 text-center">
-                        <button onclick="deleteStudentFromDB('${s.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded transition-colors" title="ลบนักเรียน"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-            
-            if(filtered.length > 300) {
-                tbody.innerHTML += `<tr><td colspan="5" class="text-center py-3 text-sm text-blue-500 bg-blue-50 font-bold border-t border-blue-100">แสดงเพียง 300 รายการ จากทั้งหมด ${filtered.length} รายการ (พิมพ์ค้นหารหัส/ชื่อเพื่อดูเพิ่มเติม)</td></tr>`;
-            }
-        }
-
-        function handleAddStudent(e) {
-            e.preventDefault();
-            const id = document.getElementById('addStuId').value.trim();
-            const name = document.getElementById('addStuName').value.trim();
-            const grade = document.getElementById('addStuGrade').value.trim();
-            const room = document.getElementById('addStuRoom').value.trim();
-            const no = document.getElementById('addStuNo').value.trim();
-            
-            const existingIdx = studentDB.findIndex(s => s.id === id);
-            const newStu = { id, name, grade, room, number: no };
-            
-            if(existingIdx > -1) {
-                studentDB[existingIdx] = newStu;
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'อัปเดตข้อมูลนักเรียนเรียบร้อย', showConfirmButton: false, timer: 1500 });
-            } else {
-                studentDB.unshift(newStu);
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'เพิ่มนักเรียนใหม่เรียบร้อย', showConfirmButton: false, timer: 1500 });
-            }
-            
-            localStorage.setItem('student_db_cache', JSON.stringify(studentDB));
-            e.target.reset();
-            updateSettingsUI();
-            document.getElementById('addStuId').focus();
-        }
-
-        function deleteStudentFromDB(id) {
+        function archiveToDrive() {
             Swal.fire({
-                title: 'ยืนยันการลบ?',
-                text: `ต้องการลบนักเรียนรหัส ${id} ออกจากระบบหรือไม่?`,
-                icon: 'warning',
+                title: 'ปิดเทอมและนำออกข้อมูล?',
+                html: 'ระบบจะดาวน์โหลดข้อมูลของเทอมนี้เป็น Excel <br>และพาคุณไปที่ <b>Google Drive</b> เพื่อให้คุณอัปโหลดไฟล์ไปเก็บไว้',
+                icon: 'info',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'ใช่, ลบเลย'
-            }).then((res) => {
-                if(res.isConfirmed) {
-                    studentDB = studentDB.filter(s => s.id !== id);
-                    localStorage.setItem('student_db_cache', JSON.stringify(studentDB));
-                    updateSettingsUI();
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'ลบเรียบร้อย', showConfirmButton: false, timer: 1500 });
+                confirmButtonText: '<i class="fas fa-cloud-upload-alt mr-1"></i> นำออก & ไปที่ Drive',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#2563eb'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const termData = appData.filter(d => d.academicYear === currentTermConfig.year && d.term === currentTermConfig.term);
+                    if(termData.length === 0) {
+                        Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลสำหรับเทอมนี้ให้สำรอง', 'warning');
+                        return;
+                    }
+                    
+                    const exportData = getDetailedExportFormat(termData);
+                    let workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(exportData), "Data");
+                    XLSX.writeFile(workbook, `ข้อมูลแก้ผลการเรียน_เทอม${currentTermConfig.term}_ปี${currentTermConfig.year}.xlsx`);
+
+                    setTimeout(() => {
+                        Swal.fire({
+                            title: 'ดาวน์โหลดไฟล์สำเร็จ!',
+                            text: 'คุณต้องการลบข้อมูลของเทอมนี้ออกจากระบบ เพื่อเตรียมพร้อมสำหรับเริ่มเทอมใหม่หรือไม่?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fas fa-trash"></i> ลบข้อมูลเทอมนี้',
+                            cancelButtonText: 'เก็บไว้ในระบบก่อน',
+                            confirmButtonColor: '#dc2626'
+                        }).then((res2) => {
+                            if (res2.isConfirmed) {
+                                appData = appData.filter(d => !(d.academicYear === currentTermConfig.year && d.term === currentTermConfig.term));
+                                saveData();
+                                renderApp();
+                                Swal.fire('ลบข้อมูลแล้ว', 'ข้อมูลถูกรีเซ็ตสำหรับเทอมใหม่', 'success');
+                            }
+                            window.open('https://drive.google.com/drive/folders/1nQXEttHgX-6FhmOqOShVV1ecjPFmE9Xi?usp=drive_link', '_blank');
+                        });
+                    }, 1000);
                 }
             });
         }
 
-        async function initStudentData() {
-            if (studentDB.length === 0) {
-                await syncStudentData(true);
-            }
+        // --- Teacher Login ---
+        function promptTeacherLogin(isFirstLoad = false) {
+            if (currentRole !== 'teacher') return;
+            
+            Swal.fire({
+                title: '<div class="text-2xl sm:text-3xl font-bold text-green-700 mt-2 mb-1"><i class="fas fa-chalkboard-teacher mr-2"></i> เข้าสู่ระบบครูผู้สอน</div>',
+                html: `
+                    <div class="text-center space-y-5 pt-4 px-2 sm:px-6">
+                        <p class="text-sm text-gray-500 mb-4">กรุณากรอกรหัสผู้ใช้งานและรหัสผ่าน (วันเกิด)</p>
+                        <div class="flex flex-col items-center">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">User (รหัสผู้ใช้งาน)</label>
+                            <input type="text" id="login-user" class="w-full max-w-[320px] p-3 text-center border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 outline-none transition-all text-green-800 font-bold text-lg placeholder-gray-300 shadow-sm" placeholder="เช่น T012">
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">รหัสผ่าน (วัน/เดือน/ปีเกิด)</label>
+                            <input type="password" id="login-dob" class="w-full max-w-[320px] p-3 text-center border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 outline-none transition-all text-green-800 font-bold text-lg placeholder-gray-300 shadow-sm" placeholder="เช่น 01/01/2540">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: !isFirstLoad,
+                confirmButtonText: '<i class="fas fa-sign-in-alt mr-2"></i> เข้าสู่ระบบ',
+                cancelButtonText: 'ยกเลิก',
+                customClass: {
+                    container: 'font-sarabun',
+                    popup: 'rounded-2xl border-4 border-green-500 bg-white shadow-2xl pb-8 pt-6',
+                    title: 'border-none',
+                    confirmButton: 'bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-10 rounded-xl text-lg shadow-md transition-transform transform hover:scale-105 mx-2 mt-6',
+                    cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-8 rounded-xl text-lg shadow-sm transition-colors mx-2 mt-6',
+                    actions: 'w-full justify-center flex-wrap gap-2'
+                },
+                buttonsStyling: false,
+                allowOutsideClick: !isFirstLoad,
+                allowEscapeKey: !isFirstLoad,
+                preConfirm: () => {
+                    const user = document.getElementById('login-user').value.trim();
+                    const dob = document.getElementById('login-dob').value.trim();
+                    if (!user || !dob) {
+                        Swal.showValidationMessage('กรุณากรอกข้อมูลให้ครบถ้วน');
+                        return false;
+                    }
+                    return { user, dob };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const foundTeacher = teacherDB.find(t => t.user === result.value.user && t.dob === result.value.dob);
+                    if (foundTeacher) {
+                        currentTeacherUser = foundTeacher.user;
+                        currentTeacherName = foundTeacher.name;
+                        document.getElementById('currentRoleText').innerHTML = `คุณครู: ${currentTeacherName}`;
+                        document.getElementById('logoutTeacherBtn').classList.remove('hidden');
+                        
+                        document.getElementById('teacherLoginPromptState').classList.add('hidden');
+                        document.getElementById('teacherContentState').classList.remove('hidden');
+
+                        Swal.fire({ title: 'เข้าสู่ระบบสำเร็จ', text: `ยินดีต้อนรับ ${currentTeacherName}`, icon: 'success', timer: 1500, showConfirmButton: false });
+                        renderApp();
+                    } else {
+                        Swal.fire({ title: 'เข้าสู่ระบบล้มเหลว', text: 'รหัสผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง', icon: 'error', confirmButtonText: 'ลองอีกครั้ง' }).then(() => promptTeacherLogin(isFirstLoad));
+                    }
+                } else if (result.dismiss === Swal.DismissReason.cancel && isFirstLoad) {
+                    document.getElementById('teacherLoginPromptState').classList.remove('hidden');
+                    document.getElementById('teacherContentState').classList.add('hidden');
+                }
+            });
         }
 
-        function autofillNormalForm() {
-            const sid = document.getElementById('input-studentId').value.trim();
-            if(!sid) return;
-            const student = studentDB.find(s => s.id === sid);
-            if(student) {
-                document.getElementById('input-studentName').value = student.name || '';
-                let gradeLevel = student.grade || '';
-                if (student.room) gradeLevel += '/' + student.room;
-                if (gradeLevel) document.getElementById('input-gradeLevel').value = gradeLevel;
-                document.getElementById('input-studentNumber').value = student.number || '';
-                
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'พบข้อมูลและเติมอัตโนมัติแล้ว', showConfirmButton: false, timer: 2000 });
+        function logoutTeacher() {
+            currentTeacherUser = '';
+            currentTeacherName = '';
+            document.getElementById('currentRoleText').innerHTML = `คุณครู (ยังไม่เข้าระบบ)`;
+            document.getElementById('logoutTeacherBtn').classList.add('hidden');
+            
+            document.getElementById('teacherLoginPromptState').classList.remove('hidden');
+            document.getElementById('teacherContentState').classList.add('hidden');
+            document.getElementById('teacherTableBody').innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">กรุณาเข้าสู่ระบบเพื่อดูประวัติ</td></tr>`;
+            promptTeacherLogin(true);
+        }
+
+        function handleRoleSwitch(role) {
+            if (role === 'admin') {
+                Swal.fire({
+                    title: 'ยืนยันสิทธิ์ผู้ดูแลระบบ',
+                    text: 'กรุณากรอกรหัสผ่านสำหรับงานวัดผล',
+                    input: 'password',
+                    showCancelButton: true,
+                    confirmButtonText: 'ยืนยัน',
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: '#9333ea'
+                }).then((result) => {
+                    if (result.isConfirmed && result.value === ADMIN_PASSWORD) {
+                        switchRole('admin');
+                    } else if (result.isConfirmed) {
+                        Swal.fire('รหัสผ่านไม่ถูกต้อง', 'คุณไม่มีสิทธิ์เข้าถึงส่วนนี้', 'error');
+                        document.getElementById('roleSelector').value = currentRole;
+                    } else {
+                        document.getElementById('roleSelector').value = currentRole;
+                    }
+                });
             } else {
-                Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'ไม่พบรหัสนักเรียนนี้ในฐานข้อมูล', showConfirmButton: false, timer: 2000 });
+                switchRole('teacher');
+                if(!currentTeacherUser) promptTeacherLogin(true);
             }
         }
-
-        function autofillRetakeForm() {
-            const sid = document.getElementById('retake-studentId').value.trim();
-            if(!sid) return;
-            const student = studentDB.find(s => s.id === sid);
-            if(student) {
-                document.getElementById('retake-studentName').value = student.name || '';
-                if(student.grade) document.getElementById('retake-grade').value = student.grade;
-                if(student.room) document.getElementById('retake-room').value = student.room;
-                document.getElementById('retake-studentNumber').value = student.number || '';
-                
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'พบข้อมูลและเติมอัตโนมัติแล้ว', showConfirmButton: false, timer: 2000 });
-            } else {
-                Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'ไม่พบรหัสนักเรียนนี้ในฐานข้อมูล', showConfirmButton: false, timer: 2000 });
-            }
-        }
-        // ----------------------------------------
-        
-        let defaultAppData = [
-            { id: 1, date: todayStr, time: '09:15', academicYear: '2569', term: '1', department: 'คณิตศาสตร์', teacher: 'ครูสมปอง สุขใจ', studentId: '65012', studentName: 'ด.ช.วิชัย รักเรียน', gradeLevel: 'ม.1/1', studentNumber: '5', subject: 'คณิตศาสตร์ (ค21101)', type: '0', newGrade: '1', remarks: '', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'pending' },
-            { id: 2, date: todayStr, time: '10:30', academicYear: '2569', term: '1', department: 'วิทยาศาสตร์และเทคโนโลยี', teacher: 'ครูมานี ดีงาม', studentId: '65023', studentName: 'ด.ญ.สุดา น่ารัก', gradeLevel: 'ม.2/1', studentNumber: '12', subject: 'วิทยาศาสตร์ (ว21101)', type: 'ร', newGrade: '1', remarks: 'ได้เกรด 1.5 โทรแจ้งวัดผลแล้ว', correctionMethod: 'ลงทะเบียนเรียนซ้ำ', attendance: 85, score: 55, status: 'pending' },
-            { id: 3, date: '2026-09-10', time: '14:20', academicYear: '2568', term: '2', department: 'ภาษาไทย', teacher: 'ครูสมปอง สุขใจ', studentId: '65045', studentName: 'นายกล้า หาญชาญ', gradeLevel: 'ม.4/1', studentNumber: '8', subject: 'ภาษาไทย (ท31101)', type: 'มส', newGrade: '1', remarks: 'ขาดเรียนบ่อย', correctionMethod: 'ลงทะเบียนเรียนซ้ำ', attendance: 75, score: 40, status: 'rejected' },
-            { id: 4, date: todayStr, time: '08:45', academicYear: '2569', term: '1', department: 'กิจกรรมพัฒนาผู้เรียน', teacher: 'ครูสมศรี มีสุข', studentId: '66101', studentName: 'ด.ช.เก่ง การเรียน', gradeLevel: 'ม.1/2', studentNumber: '1', subject: 'กิจกรรมชุมนุม', type: 'มผ', newGrade: 'ผ', remarks: 'ส่งงานครบแล้ว', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'pending' },
-            { id: 5, date: '2026-10-01', time: '11:10', academicYear: '2568', term: '2', department: 'ภาษาต่างประเทศ', teacher: 'ครูมานี ดีงาม', studentId: '66105', studentName: 'นางสาวมาลี สีชมพู', gradeLevel: 'ม.6/1', studentNumber: '25', subject: 'ภาษาอังกฤษ (อ31101)', type: '0', newGrade: '1', remarks: '', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'approved' },
-            { id: 6, date: todayStr, time: '13:05', academicYear: '2569', term: '1', department: 'สังคมศึกษาฯ', teacher: 'ครูวิจิตร ใจดี', studentId: '67001', studentName: 'นายสมชาย หมายมั่น', gradeLevel: 'ม.4/2', studentNumber: '2', subject: 'ประวัติศาสตร์ (ส31102)', type: 'ร', newGrade: '1', remarks: '', correctionMethod: 'แก้เกรดเทอมที่ผ่านมา', status: 'pending' }
-        ];
-
-        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultAppData;
-
-        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
-
-        let currentRole = 'teacher';
-        let currentTeacherName = 'ครูสมปอง สุขใจ';
-        let analyticsFiltersPopulated = false;
-
-        let adminStatusChartInst, adminTypeChartInst, adminCompareClassChartInst, adminCompareTypeChartInst;
 
         function formatDateThai(dateString) {
             if (!dateString) return '-';
@@ -979,92 +1067,49 @@
         }
 
         function getTypeBadge(type) {
-             const styles = {
-                 '0': 'bg-red-100 text-red-700 border-red-200',
-                 'ร': 'bg-orange-100 text-orange-700 border-orange-200',
-                 'มส': 'bg-purple-100 text-purple-700 border-purple-200',
-                 'มผ': 'bg-gray-200 text-gray-700 border-gray-300'
-             };
-             const style = styles[type] || 'bg-gray-100 text-gray-800';
-             return `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm border ${style} shadow-sm">${type}</span>`;
+             const styles = { '0': 'bg-red-100 text-red-700 border-red-200', 'ร': 'bg-orange-100 text-orange-700 border-orange-200', 'มส': 'bg-purple-100 text-purple-700 border-purple-200', 'มผ': 'bg-gray-200 text-gray-700 border-gray-300' };
+             return `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm border ${styles[type] || 'bg-gray-100 text-gray-800'} shadow-sm">${type}</span>`;
         }
 
         function getMethodBadge(method) {
-            if (method === 'ลงทะเบียนเรียนซ้ำ') {
-                return `<span class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-md border border-purple-200 shadow-sm font-medium"><i class="fas fa-book-open mr-1"></i>ลงทะเบียนเรียนซ้ำ</span>`;
-            } else {
-                return `<span class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-md border border-blue-200 shadow-sm font-medium"><i class="fas fa-history mr-1"></i>แก้เกรดเทอมที่ผ่านมา</span>`;
-            }
+            if (method === 'ลงทะเบียนเรียนซ้ำ') return `<span class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-md border border-purple-200 shadow-sm font-medium"><i class="fas fa-book-open mr-1"></i>ลงทะเบียนเรียนซ้ำ</span>`;
+            return `<span class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-md border border-blue-200 shadow-sm font-medium"><i class="fas fa-history mr-1"></i>แก้เกรดเดิม</span>`;
         }
 
-        function handleRoleSwitch(role) {
-            if (role === 'admin') {
-                Swal.fire({
-                    title: 'กรุณาใส่รหัสผ่านแอดมิน',
-                    input: 'password',
-                    inputAttributes: {
-                        autocapitalize: 'off'
-                    },
-                    showCancelButton: true,
-                    confirmButtonText: 'เข้าสู่ระบบ',
-                    cancelButtonText: 'ยกเลิก',
-                    showLoaderOnConfirm: true,
-                    preConfirm: (password) => {
-                        if (password === ADMIN_PASSWORD) {
-                            return true;
-                        } else {
-                            Swal.showValidationMessage('รหัสผ่านไม่ถูกต้อง!');
-                            return false;
-                        }
-                    },
-                    allowOutsideClick: () => !Swal.isLoading()
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        changeRoleView('admin');
-                        Swal.fire({
-                            title: 'เข้าสู่ระบบสำเร็จ',
-                            icon: 'success',
-                            toast: true,
-                            position: 'top-end',
-                            showConfirmButton: false,
-                            timer: 1500
-                        });
-                    } else {
-                        // User canceled or failed, revert to teacher
-                        document.getElementById('roleSelector').value = 'teacher';
-                        changeRoleView('teacher');
-                    }
-                });
-            } else {
-                changeRoleView('teacher');
-            }
-        }
-
-        function changeRoleView(role) {
+        function switchRole(role) {
             currentRole = role;
             const currentRoleText = document.getElementById('currentRoleText');
+            document.getElementById('roleSelector').value = role;
             
             if (role === 'teacher') {
                 document.getElementById('teacherView').classList.remove('hidden');
                 document.getElementById('adminView').classList.add('hidden');
-                currentRoleText.textContent = 'คุณครู';
+                currentRoleText.innerHTML = currentTeacherUser ? `คุณครู: ${currentTeacherName}` : 'คุณครู (ยังไม่เข้าระบบ)';
                 currentRoleText.className = 'bg-blue-600 px-3 py-1 rounded-full shadow-inner border border-blue-500 text-white text-xs font-bold';
+                
+                if(currentTeacherUser) {
+                    document.getElementById('logoutTeacherBtn').classList.remove('hidden');
+                    document.getElementById('teacherLoginPromptState').classList.add('hidden');
+                    document.getElementById('teacherContentState').classList.remove('hidden');
+                } else {
+                    document.getElementById('logoutTeacherBtn').classList.add('hidden');
+                    document.getElementById('teacherLoginPromptState').classList.remove('hidden');
+                    document.getElementById('teacherContentState').classList.add('hidden');
+                }
                 switchTab('teacher', 'form');
             } else {
                 document.getElementById('teacherView').classList.add('hidden');
                 document.getElementById('adminView').classList.remove('hidden');
-                currentRoleText.textContent = 'งานวัดผล';
+                currentRoleText.textContent = 'งานวัดผล (Admin)';
                 currentRoleText.className = 'bg-purple-600 px-3 py-1 rounded-full shadow-inner border border-purple-500 text-white text-xs font-bold';
+                document.getElementById('logoutTeacherBtn').classList.add('hidden');
                 switchTab('admin', 'pending');
             }
             renderApp();
         }
 
         function switchTab(view, tabName) {
-            document.querySelectorAll(`[id^="tab-${view}-"]`).forEach(el => {
-                el.classList.remove('tab-active');
-                el.classList.add('tab-inactive');
-            });
+            document.querySelectorAll(`[id^="tab-${view}-"]`).forEach(el => { el.classList.remove('tab-active'); el.classList.add('tab-inactive'); });
             const selectedTab = document.getElementById(`tab-${view}-${tabName}`);
             if(selectedTab) { selectedTab.classList.remove('tab-inactive'); selectedTab.classList.add('tab-active'); }
 
@@ -1075,13 +1120,8 @@
             if (view === 'admin') {
                 if(tabName === 'history') populateAdminFilters();
                 if(tabName === 'reports') generateReport();
-                if(tabName === 'analytics') {
-                    populateAnalyticsSelectors();
-                    updateCharts();
-                }
-                if(tabName === 'settings') {
-                    updateSettingsUI();
-                }
+                if(tabName === 'analytics') { populateAnalyticsSelectors(); updateCharts(); }
+                if(tabName === 'settings') { renderStudentDBTable(); renderTeacherDBTable(); }
             }
         }
 
@@ -1097,28 +1137,6 @@
             }
         }
 
-        function updateAdminQuickStats() {
-            const today = new Date().toISOString().substring(0, 10);
-            const currentMonth = today.substring(0, 7);
-            let todayCount = 0, monthCount = 0, pendingTotal = 0;
-            appData.forEach(item => {
-                if (item.status === 'pending') {
-                    pendingTotal++;
-                    if (item.date === today) todayCount++;
-                    if (item.date.startsWith(currentMonth)) monthCount++;
-                }
-            });
-            if(document.getElementById('statToday')) document.getElementById('statToday').innerText = todayCount;
-            if(document.getElementById('statMonth')) document.getElementById('statMonth').innerText = monthCount;
-            if(document.getElementById('statPendingTotal')) document.getElementById('statPendingTotal').innerText = pendingTotal;
-        }
-
-        function updatePendingBadge() {
-            const count = appData.filter(d => d.status === 'pending').length;
-            const badge = document.getElementById('pendingBadge');
-            if(badge) { badge.innerText = count; badge.classList.toggle('hidden', count === 0); }
-        }
-        
         function toggleFormMode() {
             const isRetake = document.querySelector('input[name="input-correctionMethod"]:checked').value === 'ลงทะเบียนเรียนซ้ำ';
             document.getElementById('normalFormSection').classList.toggle('hidden', isRetake);
@@ -1134,8 +1152,55 @@
             });
         }
 
+        function autofillNormalForm() {
+            const sid = document.getElementById('input-studentId').value.trim();
+            if(!sid) return;
+            const stu = studentDB.find(s => s.id === sid);
+            if(stu) {
+                document.getElementById('input-studentName').value = stu.name;
+                document.getElementById('input-gradeLevel').value = `${stu.grade}/${stu.room}`;
+                document.getElementById('input-studentNumber').value = stu.no;
+            }
+        }
+
+        function autofillRetakeForm() {
+            const sid = document.getElementById('retake-studentId').value.trim();
+            if(!sid) return;
+            const stu = studentDB.find(s => s.id === sid);
+            if(stu) {
+                document.getElementById('retake-studentName').value = stu.name;
+                document.getElementById('retake-grade').value = stu.grade;
+                document.getElementById('retake-room').value = stu.room;
+                document.getElementById('retake-studentNumber').value = stu.no;
+            }
+        }
+
+        function restoreFormState() {
+            const state = JSON.parse(localStorage.getItem('form_memory'));
+            if(state) {
+                if(state.method) {
+                    const r = document.querySelector(`input[name="input-correctionMethod"][value="${state.method}"]`);
+                    if(r) r.checked = true;
+                }
+                toggleFormMode();
+                if(state.method === 'แก้เกรดเทอมที่ผ่านมา') {
+                    if(state.academicYear) document.getElementById('input-academicYear').value = state.academicYear;
+                    if(state.term) document.getElementById('input-term').value = state.term;
+                    if(state.department) document.getElementById('input-department').value = state.department;
+                    if(state.subject) document.getElementById('input-subject').value = state.subject;
+                } else {
+                    if(state.academicYear) document.getElementById('retake-academicYear').value = state.academicYear;
+                    if(state.term) document.getElementById('retake-term').value = state.term;
+                    if(state.department) document.getElementById('retake-department').value = state.department;
+                    if(state.subject) document.getElementById('retake-subject').value = state.subject;
+                }
+            }
+        }
+
         function handleFormSubmit(event) {
             event.preventDefault();
+            if (!currentTeacherUser) { Swal.fire('ผิดพลาด', 'กรุณาเข้าสู่ระบบครูผู้สอนก่อนบันทึกข้อมูล', 'error'); promptTeacherLogin(); return; }
+            
             const now = new Date();
             const selectedMethod = document.querySelector('input[name="input-correctionMethod"]:checked').value;
             let formObj = {};
@@ -1157,15 +1222,8 @@
             } else {
                 const att = parseInt(document.getElementById('retake-attendance').value);
                 const score = parseInt(document.getElementById('retake-score').value);
-                
-                if (att < 80) {
-                    Swal.fire('เกิดข้อผิดพลาด', 'สรุปการเข้าเรียนซ้ำต้องมากกว่าหรือเท่ากับ 80%', 'error');
-                    return;
-                }
-                if (score < 50) {
-                    Swal.fire('เกิดข้อผิดพลาด', 'ผลการเรียนต้องผ่าน 50 คะแนน', 'error');
-                    return;
-                }
+                if (att < 80) { Swal.fire('เกิดข้อผิดพลาด', 'สรุปการเข้าเรียนซ้ำต้องมากกว่าหรือเท่ากับ 80%', 'error'); return; }
+                if (score < 50) { Swal.fire('เกิดข้อผิดพลาด', 'ผลการเรียนต้องผ่าน 50 คะแนน', 'error'); return; }
                 
                 formObj = {
                     academicYear: document.getElementById('retake-academicYear').value,
@@ -1197,73 +1255,42 @@
             appData.push(newItem);
             saveData();
             
-            // บันทึกฟิลด์ที่ใช้บ่อย (Form State Memory)
-            saveLastUsedFields(formObj, selectedMethod);
-            
+            syncToCloud({ action: 'insert', record: newItem });
+
+            localStorage.setItem('form_memory', JSON.stringify({
+                method: selectedMethod,
+                academicYear: formObj.academicYear,
+                term: formObj.term,
+                department: formObj.department,
+                subject: formObj.subject
+            }));
+
             Swal.fire({ title: 'บันทึกสำเร็จ!', text: 'ส่งข้อมูลให้งานวัดผลเรียบร้อย', icon: 'success', timer: 1500, showConfirmButton: false });
             document.getElementById('resolutionForm').reset();
-            
-            // โหลดฟิลด์ที่ใช้บ่อยกลับมา เพื่อความรวดเร็วในการคีย์ข้อมูลต่อไป
-            loadLastUsedFields();
-            toggleFormMode();
+            applyTermSettingsToForm();
+            restoreFormState();
             
             renderApp();
             setTimeout(() => switchTab('teacher', 'history'), 500);
         }
 
-        function saveLastUsedFields(obj, method) {
-            const lastUsed = {
-                method: method,
-                academicYear: obj.academicYear,
-                term: obj.term,
-                department: obj.department,
-                subject: obj.subject
-            };
-            localStorage.setItem('last_form_data', JSON.stringify(lastUsed));
-        }
-
-        function loadLastUsedFields() {
-            const lastUsed = JSON.parse(localStorage.getItem('last_form_data'));
-            if (lastUsed) {
-                if (document.getElementById('input-academicYear')) document.getElementById('input-academicYear').value = lastUsed.academicYear || '';
-                if (document.getElementById('input-term')) document.getElementById('input-term').value = lastUsed.term || '';
-                if (document.getElementById('input-department')) document.getElementById('input-department').value = lastUsed.department || '';
-                if (document.getElementById('input-subject')) document.getElementById('input-subject').value = lastUsed.subject || '';
-                
-                if (document.getElementById('retake-academicYear')) document.getElementById('retake-academicYear').value = lastUsed.academicYear || '';
-                if (document.getElementById('retake-term')) document.getElementById('retake-term').value = lastUsed.term || '';
-                if (document.getElementById('retake-department')) document.getElementById('retake-department').value = lastUsed.department || '';
-                if (document.getElementById('retake-subject')) document.getElementById('retake-subject').value = lastUsed.subject || '';
-                
-                if (lastUsed.method === 'ลงทะเบียนเรียนซ้ำ') {
-                    const r = document.querySelector('input[name="input-correctionMethod"][value="ลงทะเบียนเรียนซ้ำ"]');
-                    if(r) r.checked = true;
-                } else {
-                    const r = document.querySelector('input[name="input-correctionMethod"][value="แก้เกรดเทอมที่ผ่านมา"]');
-                    if(r) r.checked = true;
-                }
-            }
-        }
-
         function deleteRecord(id) {
             Swal.fire({
-                title: 'ยืนยันการลบข้อมูล?',
-                text: "ข้อมูลนี้จะถูกลบอย่างถาวร ไม่สามารถกู้คืนได้!",
+                title: 'ยืนยันการลบ?',
+                text: "ลบแล้วไม่สามารถกู้คืนได้",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'ใช่, ลบเลย!',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'ลบทิ้ง',
                 cancelButtonText: 'ยกเลิก'
             }).then((result) => {
                 if (result.isConfirmed) {
                     appData = appData.filter(item => item.id !== id);
                     saveData();
-                    renderApp(); 
-                    if(!document.getElementById('content-admin-analytics').classList.contains('hidden')) updateCharts();
-                    if(!document.getElementById('content-admin-reports').classList.contains('hidden')) generateReport();
-                    
-                    Swal.fire({ title: 'ลบแล้ว!', text: 'ข้อมูลถูกลบเรียบร้อยแล้ว', icon: 'success', timer: 1500, showConfirmButton: false });
+                    syncToCloud({ action: 'delete', id: id });
+                    renderApp();
+                    Swal.fire({ title: 'ลบแล้ว!', icon: 'success', timer: 1000, showConfirmButton: false });
                 }
             });
         }
@@ -1286,6 +1313,7 @@
                 if (result.isConfirmed) {
                     appData[index].status = newStatus;
                     saveData();
+                    syncToCloud({ action: 'update', id: id, status: newStatus });
                     renderApp(); 
                     if(!document.getElementById('content-admin-analytics').classList.contains('hidden')) updateCharts();
                     if(!document.getElementById('content-admin-reports').classList.contains('hidden')) generateReport();
@@ -1296,6 +1324,10 @@
         function renderTeacherHistory() {
             const tbody = document.getElementById('teacherTableBody');
             if(!tbody) return;
+            if(!currentTeacherUser) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">กรุณาเข้าสู่ระบบเพื่อดูประวัติ</td></tr>`;
+                return;
+            }
             const myData = appData.filter(d => d.teacher === currentTeacherName).sort((a,b) => b.id - a.id);
             if(!myData.length) {
                 tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">ยังไม่มีประวัติการส่งข้อมูล</td></tr>`;
@@ -1316,23 +1348,21 @@
                     <td class="px-6 py-4 text-center">${getMethodBadge(item.correctionMethod)}</td>
                     <td class="px-6 py-4 text-center">${getStatusBadge(item.status)}</td>
                     <td class="px-6 py-4 text-center">
-                        <button onclick="deleteRecord(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="ลบรายการ"><i class="fas fa-trash-alt"></i></button>
+                        ${item.status === 'pending' ? `<button onclick="deleteRecord(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors" title="ลบรายการ"><i class="fas fa-trash-alt"></i></button>` : `<span class="text-gray-300"><i class="fas fa-ban"></i></span>`}
                     </td>
                 </tr>
             `).join('');
         }
 
         function renderHomeroomTable() {
-            const selectEl = document.getElementById('homeroomSelect');
-            const searchEl = document.getElementById('searchInput');
+            const hSelect = document.getElementById('homeroomSelect');
+            const sInput = document.getElementById('searchInput');
+            if(!hSelect || !sInput) return;
+            
+            const roomQuery = hSelect.value;
+            const textQuery = sInput.value.toLowerCase();
             const tbody = document.getElementById('homeroomTableBody');
-            
-            // ป้องกัน Error หากไม่มีกล่องค้นหาหรือตารางในหน้า
-            if (!selectEl || !searchEl || !tbody) return;
-
-            const roomQuery = selectEl.value;
-            const textQuery = searchEl.value.toLowerCase();
-            
+            if(!tbody) return;
             let filtered = appData;
             if(roomQuery) filtered = filtered.filter(d => d.gradeLevel === roomQuery);
             if(textQuery) filtered = filtered.filter(d => d.studentId.includes(textQuery) || d.studentName.toLowerCase().includes(textQuery));
@@ -1360,8 +1390,29 @@
                 </tr>
             `).join('');
         }
-        
         function searchStudent() { renderHomeroomTable(); }
+
+        function updateAdminQuickStats() {
+            const today = new Date().toISOString().substring(0, 10);
+            const currentMonth = today.substring(0, 7);
+            let todayCount = 0, monthCount = 0, pendingTotal = 0;
+            appData.forEach(item => {
+                if (item.status === 'pending') {
+                    pendingTotal++;
+                    if (item.date === today) todayCount++;
+                    if (item.date.startsWith(currentMonth)) monthCount++;
+                }
+            });
+            if(document.getElementById('statToday')) document.getElementById('statToday').innerText = todayCount;
+            if(document.getElementById('statMonth')) document.getElementById('statMonth').innerText = monthCount;
+            if(document.getElementById('statPendingTotal')) document.getElementById('statPendingTotal').innerText = pendingTotal;
+        }
+
+        function updatePendingBadge() {
+            const count = appData.filter(d => d.status === 'pending').length;
+            const badge = document.getElementById('pendingBadge');
+            if(badge) { badge.innerText = count; badge.classList.toggle('hidden', count === 0); }
+        }
 
         function renderAdminPendingTable() {
             const tbody = document.getElementById('adminPendingTableBody');
@@ -1392,8 +1443,7 @@
                     <td class="px-4 py-3 text-center">${getMethodBadge(item.correctionMethod)}</td>
                     <td class="px-4 py-3 text-center whitespace-nowrap">
                         <button onclick="handleApproval(${item.id}, 'approved')" class="bg-green-100 hover:bg-green-600 text-green-700 hover:text-white border border-green-300 hover:border-green-600 p-2 rounded-lg transition-colors mr-1 shadow-sm" title="อนุมัติ"><i class="fas fa-check"></i></button>
-                        <button onclick="handleApproval(${item.id}, 'rejected')" class="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white border border-red-300 hover:border-red-600 p-2 rounded-lg transition-colors mr-1 shadow-sm" title="ตีกลับ"><i class="fas fa-times"></i></button>
-                        <button onclick="deleteRecord(${item.id})" class="bg-gray-100 hover:bg-gray-600 text-gray-700 hover:text-white border border-gray-300 hover:border-gray-600 p-2 rounded-lg transition-colors shadow-sm" title="ลบ"><i class="fas fa-trash-alt"></i></button>
+                        <button onclick="handleApproval(${item.id}, 'rejected')" class="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white border border-red-300 hover:border-red-600 p-2 rounded-lg transition-colors shadow-sm" title="ตีกลับ"><i class="fas fa-times"></i></button>
                     </td>
                 </tr>
             `).join('');
@@ -1403,9 +1453,14 @@
             const years = [...new Set(appData.map(item => item.academicYear))].sort((a, b) => b - a);
             const departments = [...new Set(appData.map(item => item.department))].sort();
             const rooms = [...new Set(appData.map(item => item.gradeLevel))].sort();
+            const teachers = [...new Set(appData.map(item => item.teacher))].sort();
+            
             document.getElementById('filterYear').innerHTML = '<option value="all">-- ทุกปี --</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
             document.getElementById('filterDepartment').innerHTML = '<option value="all">-- ทั้งหมด --</option>' + departments.map(d => `<option value="${d}">${d}</option>`).join('');
             document.getElementById('adminRoomFilter').innerHTML = '<option value="all">-- ทุกระดับชั้น/ห้อง --</option>' + rooms.map(r => `<option value="${r}">${r}</option>`).join('');
+            
+            const teacherSelect = document.getElementById('filterTeacher');
+            if(teacherSelect) teacherSelect.innerHTML = '<option value="all">-- ทุกคน --</option>' + teachers.map(t => `<option value="${t}">${t}</option>`).join('');
         }
 
         function renderAdminHistoryTable() {
@@ -1414,12 +1469,16 @@
             const dept = document.getElementById('filterDepartment').value;
             const status = document.getElementById('filterStatus').value;
             const room = document.getElementById('adminRoomFilter').value;
+            const teacher = document.getElementById('filterTeacher') ? document.getElementById('filterTeacher').value : 'all';
+            
             let filtered = appData;
             if (year !== 'all') filtered = filtered.filter(d => d.academicYear === year);
             if (term !== 'all') filtered = filtered.filter(d => d.term === term);
             if (dept !== 'all') filtered = filtered.filter(d => d.department === dept);
             if (status !== 'all') filtered = filtered.filter(d => d.status === status);
             if (room !== 'all') filtered = filtered.filter(d => d.gradeLevel === room);
+            if (teacher !== 'all') filtered = filtered.filter(d => d.teacher === teacher);
+            
             filtered.sort((a,b) => b.id - a.id);
             document.getElementById('filteredCountText').innerText = `พบ ${filtered.length} รายการ`;
             const tbody = document.getElementById('adminHistoryTableBody');
@@ -1451,7 +1510,7 @@
                     <td class="px-4 py-3 text-center">${getMethodBadge(item.correctionMethod)}</td>
                     <td class="px-4 py-3 text-center">${getStatusBadge(item.status)}</td>
                     <td class="px-4 py-3 text-center">
-                        <button onclick="deleteRecord(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="ลบรายการ"><i class="fas fa-trash-alt"></i></button>
+                        <button onclick="deleteRecord(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors" title="ลบรายการ"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>
             `).join('');
@@ -1463,6 +1522,7 @@
             document.getElementById('filterDepartment').value = 'all';
             document.getElementById('filterStatus').value = 'all';
             document.getElementById('adminRoomFilter').value = 'all';
+            if(document.getElementById('filterTeacher')) document.getElementById('filterTeacher').value = 'all';
             renderAdminHistoryTable();
         }
 
@@ -1483,9 +1543,7 @@
                         ${years.map(y => `<option value="${y}">${y}</option>`).join('')}
                     </select>
                 `;
-            } else {
-                container.innerHTML = '';
-            }
+            } else { container.innerHTML = ''; }
             renderReportData();
         }
 
@@ -1500,14 +1558,7 @@
                 const dateVal = document.getElementById('reportDateValue')?.value;
                 if(!dateVal) return;
                 const filtered = approvedData.filter(d => d.date.startsWith(dateVal));
-                htmlHead = `<tr>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">กลุ่มสาระฯ</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ 0</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ ร</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ มส</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ มผ</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase bg-gray-200">รวมทั้งหมด</th>
-                </tr>`;
+                htmlHead = `<tr><th class="px-4 py-3 text-left">กลุ่มสาระฯ</th><th class="px-4 py-3 text-center">แก้ 0</th><th class="px-4 py-3 text-center">แก้ ร</th><th class="px-4 py-3 text-center">แก้ มส</th><th class="px-4 py-3 text-center">แก้ มผ</th><th class="px-4 py-3 text-center bg-gray-200">รวมทั้งหมด</th></tr>`;
                 const departments = [...new Set(approvedData.map(item => item.department))].sort();
                 let totals = { '0': 0, 'ร': 0, 'มส': 0, 'มผ': 0, 'all': 0 };
                 departments.forEach(dept => {
@@ -1518,37 +1569,14 @@
                     const cmp = deptData.filter(d => d.type === 'มผ').length;
                     const t = deptData.length;
                     if(t > 0) {
-                        htmlBody += `<tr>
-                            <td class="px-4 py-3 font-medium text-sm">${dept}</td>
-                            <td class="px-4 py-3 text-center text-sm">${c0 || '-'}</td>
-                            <td class="px-4 py-3 text-center text-sm">${cr || '-'}</td>
-                            <td class="px-4 py-3 text-center text-sm">${cms || '-'}</td>
-                            <td class="px-4 py-3 text-center text-sm">${cmp || '-'}</td>
-                            <td class="px-4 py-3 text-center text-sm font-bold bg-gray-50">${t}</td>
-                        </tr>`;
+                        htmlBody += `<tr><td class="px-4 py-3">${dept}</td><td class="px-4 py-3 text-center">${c0||'-'}</td><td class="px-4 py-3 text-center">${cr||'-'}</td><td class="px-4 py-3 text-center">${cms||'-'}</td><td class="px-4 py-3 text-center">${cmp||'-'}</td><td class="px-4 py-3 text-center font-bold bg-gray-50">${t}</td></tr>`;
                         totals['0']+=c0; totals['ร']+=cr; totals['มส']+=cms; totals['มผ']+=cmp; totals['all']+=t;
                     }
                 });
                 if(totals.all === 0) htmlBody = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลที่อนุมัติในช่างเวลานี้</td></tr>`;
-                else {
-                    htmlBody += `<tr class="bg-gray-100 font-bold">
-                        <td class="px-4 py-3 text-right">รวมทั้งสิ้น</td>
-                        <td class="px-4 py-3 text-center text-red-600">${totals['0']}</td>
-                        <td class="px-4 py-3 text-center text-orange-600">${totals['ร']}</td>
-                        <td class="px-4 py-3 text-center text-purple-600">${totals['มส']}</td>
-                        <td class="px-4 py-3 text-center text-gray-700">${totals['มผ']}</td>
-                        <td class="px-4 py-3 text-center text-blue-700 text-lg">${totals['all']}</td>
-                    </tr>`;
-                }
+                else { htmlBody += `<tr class="bg-gray-100 font-bold"><td class="px-4 py-3 text-right">รวมทั้งสิ้น</td><td class="px-4 py-3 text-center text-red-600">${totals['0']}</td><td class="px-4 py-3 text-center text-orange-600">${totals['ร']}</td><td class="px-4 py-3 text-center text-purple-600">${totals['มส']}</td><td class="px-4 py-3 text-center">${totals['มผ']}</td><td class="px-4 py-3 text-center text-blue-700 text-lg">${totals['all']}</td></tr>`; }
             } else if (reportType === 'class_room') {
-                htmlHead = `<tr>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">ระดับชั้น/ห้อง</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ 0</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ ร</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ มส</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">แก้ มผ</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase bg-gray-200">รวมทั้งหมด</th>
-                </tr>`;
+                htmlHead = `<tr><th class="px-4 py-3 text-left">ระดับชั้น/ห้อง</th><th class="px-4 py-3 text-center">แก้ 0</th><th class="px-4 py-3 text-center">แก้ ร</th><th class="px-4 py-3 text-center">แก้ มส</th><th class="px-4 py-3 text-center">แก้ มผ</th><th class="px-4 py-3 text-center bg-gray-200">รวมทั้งหมด</th></tr>`;
                 const rooms = [...new Set(approvedData.map(item => item.gradeLevel))].sort();
                 rooms.forEach(room => {
                     const rData = approvedData.filter(d => d.gradeLevel === room);
@@ -1557,43 +1585,21 @@
                     const cms = rData.filter(d => d.type === 'มส').length;
                     const cmp = rData.filter(d => d.type === 'มผ').length;
                     const t = rData.length;
-                    if(t > 0) {
-                        htmlBody += `<tr>
-                            <td class="px-4 py-3 font-medium text-sm text-blue-800">${room}</td>
-                            <td class="px-4 py-3 text-center text-sm">${c0 || '-'}</td>
-                            <td class="px-4 py-3 text-center text-sm">${cr || '-'}</td>
-                            <td class="px-4 py-3 text-center text-sm">${cms || '-'}</td>
-                            <td class="px-4 py-3 text-center text-sm">${cmp || '-'}</td>
-                            <td class="px-4 py-3 text-center text-sm font-bold bg-gray-50">${t}</td>
-                        </tr>`;
-                    }
+                    if(t > 0) htmlBody += `<tr><td class="px-4 py-3 font-medium text-blue-800">${room}</td><td class="px-4 py-3 text-center">${c0||'-'}</td><td class="px-4 py-3 text-center">${cr||'-'}</td><td class="px-4 py-3 text-center">${cms||'-'}</td><td class="px-4 py-3 text-center">${cmp||'-'}</td><td class="px-4 py-3 text-center font-bold bg-gray-50">${t}</td></tr>`;
                 });
             } else if (reportType === 'term_year') {
                 const yearFilter = document.getElementById('reportYearValue')?.value;
                 let dataToUse = approvedData;
                 if(yearFilter && yearFilter !== 'all') dataToUse = approvedData.filter(d => d.academicYear === yearFilter);
-                htmlHead = `<tr>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">ปีการศึกษา / เทอม</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">รูปแบบ: แก้เกรดเดิม</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">รูปแบบ: เรียนซ้ำ</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase bg-gray-200">รวมจำนวนรายการที่อนุมัติ</th>
-                </tr>`;
+                htmlHead = `<tr><th class="px-4 py-3 text-left">ปี/เทอม</th><th class="px-4 py-3 text-center">แก้เกรดเดิม</th><th class="px-4 py-3 text-center">เรียนซ้ำ</th><th class="px-4 py-3 text-center bg-gray-200">รวมอนุมัติ</th></tr>`;
                 const groups = {};
                 dataToUse.forEach(d => {
                     const key = `${d.academicYear} / ${d.term}`;
                     if(!groups[key]) groups[key] = { old: 0, new: 0, total: 0 };
-                    if(d.correctionMethod === 'แก้เกรดเทอมที่ผ่านมา') groups[key].old++;
-                    else groups[key].new++;
+                    if(d.correctionMethod === 'แก้เกรดเทอมที่ผ่านมา') groups[key].old++; else groups[key].new++;
                     groups[key].total++;
                 });
-                Object.keys(groups).sort().forEach(k => {
-                    htmlBody += `<tr>
-                        <td class="px-4 py-3 font-bold text-sm">${k}</td>
-                        <td class="px-4 py-3 text-center text-sm text-blue-600">${groups[k].old || '-'}</td>
-                        <td class="px-4 py-3 text-center text-sm text-purple-600">${groups[k].new || '-'}</td>
-                        <td class="px-4 py-3 text-center text-sm font-black bg-gray-50">${groups[k].total}</td>
-                    </tr>`;
-                });
+                Object.keys(groups).sort().forEach(k => { htmlBody += `<tr><td class="px-4 py-3 font-bold">${k}</td><td class="px-4 py-3 text-center text-blue-600">${groups[k].old||'-'}</td><td class="px-4 py-3 text-center text-purple-600">${groups[k].new||'-'}</td><td class="px-4 py-3 text-center font-black bg-gray-50">${groups[k].total}</td></tr>`; });
             }
             thead.innerHTML = htmlHead;
             tbody.innerHTML = htmlBody || `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูล</td></tr>`;
@@ -1601,25 +1607,11 @@
 
         function getDetailedExportFormat(data) {
             return data.map(item => ({
-                'รหัสอ้างอิง': item.id,
-                'ปีการศึกษา': item.academicYear,
-                'ภาคเรียน': item.term,
-                'วันที่ดำเนินการ': formatDateThai(item.date),
-                'เวลา': item.time,
-                'รหัสนักเรียน': item.studentId,
-                'ชื่อ-นามสกุล': item.studentName,
-                'ระดับชั้น/ห้อง': item.gradeLevel,
-                'เลขที่': item.studentNumber,
-                'กลุ่มสาระการเรียนรู้': item.department,
-                'รายวิชา': item.subject,
-                'ครูผู้สอน': item.teacher,
-                'ประเภท (ที่แก้)': item.type,
-                'เกรดที่ได้หลังแก้': item.newGrade,
-                'รูปแบบการดำเนินการ': item.correctionMethod,
-                'คะแนน': item.score || '-',
-                'เวลาเรียนซ้ำ (%)': item.attendance || '-',
-                'หมายเหตุ': item.remarks || '-',
-                'สถานะ': item.status === 'approved' ? 'อนุมัติเรียบร้อย' : (item.status === 'pending' ? 'รอตรวจสอบ' : 'ตีกลับ/ไม่อนุมัติ')
+                'รหัสอ้างอิง': item.id, 'ปีการศึกษา': item.academicYear, 'ภาคเรียน': item.term, 'วันที่': formatDateThai(item.date), 'เวลา': item.time,
+                'รหัสนักเรียน': item.studentId, 'ชื่อ': item.studentName, 'ห้อง': item.gradeLevel, 'เลขที่': item.studentNumber,
+                'กลุ่มสาระฯ': item.department, 'รายวิชา': item.subject, 'ครู': item.teacher, 'แก้': item.type, 'ได้': item.newGrade,
+                'รูปแบบ': item.correctionMethod, 'คะแนน': item.score||'-', 'เวลาเรียน': item.attendance||'-', 'หมายเหตุ': item.remarks||'-',
+                'สถานะ': item.status === 'approved' ? 'อนุมัติ' : (item.status === 'pending' ? 'รอพิจารณา' : 'ตีกลับ')
             }));
         }
 
@@ -1628,79 +1620,44 @@
             let filename = '';
             let exportData = [];
 
-            if (type === 'pending') {
-                exportData = getDetailedExportFormat(appData.filter(d => d.status === 'pending'));
-                filename = 'รายการรอตรวจสอบ_' + todayStr + '.xlsx';
-            } else if (type === 'history') {
-                const year = document.getElementById('filterYear').value;
-                const term = document.getElementById('filterTerm').value;
-                const dept = document.getElementById('filterDepartment').value;
-                const status = document.getElementById('filterStatus').value;
-                const room = document.getElementById('adminRoomFilter').value;
-
+            if (type === 'pending') { exportData = getDetailedExportFormat(appData.filter(d => d.status === 'pending')); filename = 'รอตรวจสอบ_' + todayStr + '.xlsx'; }
+            else if (type === 'history') {
+                const year = document.getElementById('filterYear').value, 
+                      term = document.getElementById('filterTerm').value, 
+                      dept = document.getElementById('filterDepartment').value, 
+                      status = document.getElementById('filterStatus').value, 
+                      room = document.getElementById('adminRoomFilter').value,
+                      teacher = document.getElementById('filterTeacher') ? document.getElementById('filterTeacher').value : 'all';
+                      
                 let filtered = appData;
                 if (year !== 'all') filtered = filtered.filter(d => d.academicYear === year);
                 if (term !== 'all') filtered = filtered.filter(d => d.term === term);
                 if (dept !== 'all') filtered = filtered.filter(d => d.department === dept);
                 if (status !== 'all') filtered = filtered.filter(d => d.status === status);
                 if (room !== 'all') filtered = filtered.filter(d => d.gradeLevel === room);
+                if (teacher !== 'all') filtered = filtered.filter(d => d.teacher === teacher);
                 
                 exportData = getDetailedExportFormat(filtered);
-                filename = 'ประวัติข้อมูล_' + todayStr + '.xlsx';
+                filename = 'ประวัติ_' + todayStr + '.xlsx';
             } else if (type === 'teacher_history') {
-                const myData = appData.filter(d => d.teacher === currentTeacherName).sort((a,b) => b.id - a.id);
-                exportData = getDetailedExportFormat(myData);
-                filename = 'ประวัติการส่งของฉัน_' + todayStr + '.xlsx';
+                exportData = getDetailedExportFormat(appData.filter(d => d.teacher === currentTeacherName).sort((a,b) => b.id - a.id));
+                filename = 'ประวัติฉัน_' + todayStr + '.xlsx';
             } else if (type === 'current_report') {
-                const table = document.getElementById('reportTableElement');
-                const ws = XLSX.utils.table_to_sheet(table);
-                XLSX.utils.book_append_sheet(workbook, ws, "Report");
-                XLSX.writeFile(workbook, 'รายงานสรุป_' + todayStr + '.xlsx');
-                return;
+                XLSX.utils.book_append_sheet(workbook, XLSX.utils.table_to_sheet(document.getElementById('reportTableElement')), "Report");
+                XLSX.writeFile(workbook, 'รายงาน_' + todayStr + '.xlsx'); return;
             }
-
-            if(exportData.length === 0) {
-                Swal.fire('ข้อมูลว่างเปล่า', 'ไม่มีข้อมูลสำหรับนำออก', 'info');
-                return;
-            }
-
-            const worksheet = XLSX.utils.json_to_sheet(exportData);
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+            if(exportData.length === 0) { Swal.fire('ข้อมูลว่างเปล่า', 'ไม่มีข้อมูลสำหรับนำออก', 'info'); return; }
+            XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(exportData), "Data");
             XLSX.writeFile(workbook, filename);
         }
-
-        function exportHomeroomExcel() {
-            const table = document.getElementById('homeroomTableElement');
-            const workbook = XLSX.utils.table_to_book(table, {sheet: "Homeroom"});
-            XLSX.writeFile(workbook, 'รายงานที่ปรึกษา_' + todayStr + '.xlsx');
-        }
-
+        function exportHomeroomExcel() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('homeroomTableElement'), {sheet: "Homeroom"}), 'ที่ปรึกษา_' + todayStr + '.xlsx'); }
         function exportHomeroomPDF() {
             document.getElementById('homeroomExportHeader').classList.remove('hidden');
             document.getElementById('homeroomExportDate').innerText = formatDateThai(todayStr);
-            const element = document.getElementById('homeroomPrintArea');
-            const opt = {
-                margin: 0.5,
-                filename: 'รายงานที่ปรึกษา_' + todayStr + '.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-            };
-            html2pdf().set(opt).from(element).save().then(() => {
-                document.getElementById('homeroomExportHeader').classList.add('hidden');
-            });
+            html2pdf().set({ margin: 0.5, filename: 'ที่ปรึกษา_' + todayStr + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(document.getElementById('homeroomPrintArea')).save().then(() => document.getElementById('homeroomExportHeader').classList.add('hidden'));
         }
-
         function exportAnalyticsPDF() {
-            const element = document.getElementById('content-admin-analytics');
-            const opt = {
-                margin: 0.5,
-                filename: 'รายงานสถิติและวิเคราะห์_' + todayStr + '.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-            };
-            html2pdf().set(opt).from(element).save();
+            html2pdf().set({ margin: 0.5, filename: 'สถิติ_' + todayStr + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(document.getElementById('content-admin-analytics')).save();
         }
 
         function populateAnalyticsSelectors() {
@@ -1712,26 +1669,18 @@
             document.getElementById('cmpYear1').innerHTML = '<option value="all">ทุกปี</option>' + yrOpts;
             document.getElementById('cmpYear2').innerHTML = '<option value="all">ทุกปี</option>' + yrOpts;
             if(years.length > 0) {
-                document.getElementById('cmpYear1').value = years[0];
-                document.getElementById('cmpTerm1').value = "1";
-                if(years.length > 1) {
-                    document.getElementById('cmpYear2').value = years[1];
-                    document.getElementById('cmpTerm2').value = "1";
-                } else {
-                    document.getElementById('cmpYear2').value = years[0];
-                    document.getElementById('cmpTerm2').value = "2";
-                }
+                document.getElementById('cmpYear1').value = years[0]; document.getElementById('cmpTerm1').value = "1";
+                if(years.length > 1) { document.getElementById('cmpYear2').value = years[1]; document.getElementById('cmpTerm2').value = "1"; } 
+                else { document.getElementById('cmpYear2').value = years[0]; document.getElementById('cmpTerm2').value = "2"; }
             }
             analyticsFiltersPopulated = true;
         }
 
         function updateCharts() {
             if (document.getElementById('content-admin-analytics').classList.contains('hidden')) return;
-            Chart.defaults.font.family = "'Sarabun', sans-serif";
-            Chart.defaults.color = '#4b5563';
+            Chart.defaults.font.family = "'Sarabun', sans-serif"; Chart.defaults.color = '#4b5563';
             
-            const gYear = document.getElementById('analyticsGlobalYear').value;
-            const gTerm = document.getElementById('analyticsGlobalTerm').value;
+            const gYear = document.getElementById('analyticsGlobalYear').value, gTerm = document.getElementById('analyticsGlobalTerm').value;
             let globalData = appData;
             if(gYear !== 'all') globalData = globalData.filter(d => d.academicYear === gYear);
             if(gTerm !== 'all') globalData = globalData.filter(d => d.term === gTerm);
@@ -1739,86 +1688,391 @@
             const statusCounts = { pending: 0, approved: 0, rejected: 0 };
             globalData.forEach(d => { if(statusCounts[d.status] !== undefined) statusCounts[d.status]++; });
             if(adminStatusChartInst) adminStatusChartInst.destroy();
-            const ctxStatus = document.getElementById('adminStatusChart').getContext('2d');
-            adminStatusChartInst = new Chart(ctxStatus, {
-                type: 'doughnut',
-                data: {
-                    labels: ['รอตรวจสอบ', 'อนุมัติแล้ว', 'ตีกลับ'],
-                    datasets: [{
-                        data: [statusCounts.pending, statusCounts.approved, statusCounts.rejected],
-                        backgroundColor: ['#fde047', '#4ade80', '#f87171'], borderWidth: 0, hoverOffset: 4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            adminStatusChartInst = new Chart(document.getElementById('adminStatusChart').getContext('2d'), {
+                type: 'doughnut', data: { labels: ['รอตรวจสอบ', 'อนุมัติแล้ว', 'ตีกลับ'], datasets: [{ data: [statusCounts.pending, statusCounts.approved, statusCounts.rejected], backgroundColor: ['#fde047', '#4ade80', '#f87171'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false }
             });
 
-            const approvedGlobal = globalData.filter(d => d.status === 'approved');
             const typeCounts = { '0': 0, 'ร': 0, 'มส': 0, 'มผ': 0 };
-            approvedGlobal.forEach(d => { if(typeCounts[d.type] !== undefined) typeCounts[d.type]++; });
+            globalData.filter(d => d.status === 'approved').forEach(d => { if(typeCounts[d.type] !== undefined) typeCounts[d.type]++; });
             if(adminTypeChartInst) adminTypeChartInst.destroy();
-            const ctxType = document.getElementById('adminTypeChart').getContext('2d');
-            adminTypeChartInst = new Chart(ctxType, {
-                type: 'pie',
-                data: {
-                    labels: ['แก้ 0', 'แก้ ร', 'แก้ มส', 'แก้ มผ'],
-                    datasets: [{
-                        data: [typeCounts['0'], typeCounts['ร'], typeCounts['มส'], typeCounts['มผ']],
-                        backgroundColor: ['#ef4444', '#f97316', '#a855f7', '#9ca3af'], borderWidth: 0
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            adminTypeChartInst = new Chart(document.getElementById('adminTypeChart').getContext('2d'), {
+                type: 'pie', data: { labels: ['แก้ 0', 'แก้ ร', 'แก้ มส', 'แก้ มผ'], datasets: [{ data: [typeCounts['0'], typeCounts['ร'], typeCounts['มส'], typeCounts['มผ']], backgroundColor: ['#ef4444', '#f97316', '#a855f7', '#9ca3af'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false }
             });
 
-            const y1 = document.getElementById('cmpYear1').value;
-            const t1 = document.getElementById('cmpTerm1').value;
-            const y2 = document.getElementById('cmpYear2').value;
-            const t2 = document.getElementById('cmpTerm2').value;
-            const lbl1 = (y1==='all' && t1==='all') ? 'ข้อมูลชุด 1 (ทั้งหมด)' : `เทอม ${t1==='all'?'รวม':t1}/${y1==='all'?'รวม':y1}`;
-            const lbl2 = (y2==='all' && t2==='all') ? 'ข้อมูลชุด 2 (ทั้งหมด)' : `เทอม ${t2==='all'?'รวม':t2}/${y2==='all'?'รวม':y2}`;
+            const y1 = document.getElementById('cmpYear1').value, t1 = document.getElementById('cmpTerm1').value;
+            const y2 = document.getElementById('cmpYear2').value, t2 = document.getElementById('cmpTerm2').value;
+            const lbl1 = (y1==='all' && t1==='all') ? 'ชุด 1 (รวม)' : `เทอม ${t1==='all'?'รวม':t1}/${y1==='all'?'รวม':y1}`;
+            const lbl2 = (y2==='all' && t2==='all') ? 'ชุด 2 (รวม)' : `เทอม ${t2==='all'?'รวม':t2}/${y2==='all'?'รวม':y2}`;
 
-            let data1 = appData.filter(d => d.status === 'approved');
-            if(y1 !== 'all') data1 = data1.filter(d => d.academicYear === y1);
-            if(t1 !== 'all') data1 = data1.filter(d => d.term === t1);
-            let data2 = appData.filter(d => d.status === 'approved');
-            if(y2 !== 'all') data2 = data2.filter(d => d.academicYear === y2);
-            if(t2 !== 'all') data2 = data2.filter(d => d.term === t2);
+            let data1 = appData.filter(d => d.status === 'approved'), data2 = appData.filter(d => d.status === 'approved');
+            if(y1 !== 'all') data1 = data1.filter(d => d.academicYear === y1); if(t1 !== 'all') data1 = data1.filter(d => d.term === t1);
+            if(y2 !== 'all') data2 = data2.filter(d => d.academicYear === y2); if(t2 !== 'all') data2 = data2.filter(d => d.term === t2);
 
-            const classes = ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'];
-            const classD1 = [0,0,0,0,0,0], classD2 = [0,0,0,0,0,0];
+            const classes = ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'], classD1 = [0,0,0,0,0,0], classD2 = [0,0,0,0,0,0];
             data1.forEach(d => { const idx = classes.indexOf(d.gradeLevel.split('/')[0]); if(idx !== -1) classD1[idx]++; });
             data2.forEach(d => { const idx = classes.indexOf(d.gradeLevel.split('/')[0]); if(idx !== -1) classD2[idx]++; });
             if(adminCompareClassChartInst) adminCompareClassChartInst.destroy();
-            const ctxClassCmp = document.getElementById('adminCompareClassChart').getContext('2d');
-            adminCompareClassChartInst = new Chart(ctxClassCmp, {
-                type: 'bar',
-                data: { labels: classes, datasets: [
-                    { label: lbl1, data: classD1, backgroundColor: '#3b82f6', borderRadius: 4 },
-                    { label: lbl2, data: classD2, backgroundColor: '#a855f7', borderRadius: 4 }
-                ]},
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            adminCompareClassChartInst = new Chart(document.getElementById('adminCompareClassChart').getContext('2d'), {
+                type: 'bar', data: { labels: classes, datasets: [{ label: lbl1, data: classD1, backgroundColor: '#3b82f6' }, { label: lbl2, data: classD2, backgroundColor: '#a855f7' }]}, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
 
-            const types = ['0', 'ร', 'มส', 'มผ'];
-            const typeD1 = [0,0,0,0], typeD2 = [0,0,0,0];
+            const types = ['0', 'ร', 'มส', 'มผ'], typeD1 = [0,0,0,0], typeD2 = [0,0,0,0];
             data1.forEach(d => { const idx = types.indexOf(d.type); if(idx !== -1) typeD1[idx]++; });
             data2.forEach(d => { const idx = types.indexOf(d.type); if(idx !== -1) typeD2[idx]++; });
             if(adminCompareTypeChartInst) adminCompareTypeChartInst.destroy();
-            const ctxTypeCmp = document.getElementById('adminCompareTypeChart').getContext('2d');
-            adminCompareTypeChartInst = new Chart(ctxTypeCmp, {
-                type: 'bar',
-                data: { labels: types, datasets: [
-                    { label: lbl1, data: typeD1, backgroundColor: '#3b82f6', borderRadius: 4 },
-                    { label: lbl2, data: typeD2, backgroundColor: '#a855f7', borderRadius: 4 }
-                ]},
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            adminCompareTypeChartInst = new Chart(document.getElementById('adminCompareTypeChart').getContext('2d'), {
+                type: 'bar', data: { labels: types, datasets: [{ label: lbl1, data: typeD1, backgroundColor: '#3b82f6' }, { label: lbl2, data: typeD2, backgroundColor: '#a855f7' }]}, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
         }
 
-        // Initialize App
+        async function fetchCsvFromGoogleSheet(url) {
+            try {
+                let csvUrl = url;
+                if (url.includes('/edit')) csvUrl = url.replace(/\/edit.*$/, '/export?format=csv');
+                if (url.includes('gid=') && !csvUrl.includes('gid=')) {
+                    const gid = new URL(url).searchParams.get('gid');
+                    if(gid) csvUrl += '&gid=' + gid;
+                }
+                
+                let text = '';
+                const proxies = [
+                    (u) => u,
+                    (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+                    (u) => 'https://corsproxy.io/?' + encodeURIComponent(u)
+                ];
+
+                for (const getUrl of proxies) {
+                    try {
+                        const targetUrl = getUrl(csvUrl);
+                        const response = await fetch(targetUrl, { cache: 'no-cache' });
+                        if (response.ok) {
+                            text = await response.text();
+                            if (text && (text.includes(',') || text.includes('\n'))) break;
+                        }
+                    } catch (err) {}
+                }
+
+                if (!text) return null;
+                return text.split(/\r?\n/).map(row => {
+                    const matches = row.match(/(\s*'[^']*'\s*|\s*"[^"]*"\s*|[^,]*)(?=\s*,|\s*$)/g);
+                    return matches ? matches.map(m => m.replace(/^['"](.*)['"]$/, '$1').trim()) : [];
+                });
+            } catch (error) { return null; }
+        }
+
+        async function syncStudentData() {
+            const statusEl = document.getElementById('studentDbStatus');
+            const urlInputElem = document.getElementById('adminSheetUrl');
+            const urlInput = urlInputElem ? urlInputElem.value.trim() : '';
+            if(urlInput) localStorage.setItem('admin_student_sheet_url', urlInput);
+            const url = urlInput || 'https://docs.google.com/spreadsheets/d/1wN_qcHFc6Th7huxkmG8RDna41VKJuAps/export?format=csv&gid=1349736231';
+            
+            if(statusEl) {
+                statusEl.innerText = 'กำลังดาวน์โหลด...'; 
+                statusEl.className = 'font-bold text-yellow-600 bg-yellow-50 px-3 py-1 rounded-lg border border-yellow-200 shadow-sm ml-1';
+            }
+            
+            const rows = await fetchCsvFromGoogleSheet(url);
+            if(rows && rows.length > 1) {
+                let headers = rows[0].map(h => h.trim());
+                let idIdx = headers.findIndex(h => h.includes('เลขประจำตัว'));
+                let nameIdx = headers.findIndex(h => h.includes('ชื่อ'));
+                let gradeIdx = headers.findIndex(h => h.includes('ชั้น'));
+                let roomIdx = headers.findIndex(h => h.includes('ห้อง'));
+                let noIdx = headers.findIndex(h => h.includes('เลขที่'));
+
+                if(idIdx === -1) idIdx = 1; if(nameIdx === -1) nameIdx = 0; if(gradeIdx === -1) gradeIdx = 2; if(roomIdx === -1) roomIdx = 3; if(noIdx === -1) noIdx = 4;
+
+                let newData = [];
+                for(let i=1; i<rows.length; i++) {
+                    if(rows[i].length > Math.max(idIdx, nameIdx) && rows[i][idIdx]) {
+                        newData.push({ id: rows[i][idIdx], name: rows[i][nameIdx] || '', grade: rows[i][gradeIdx] || '', room: rows[i][roomIdx] || '', no: rows[i][noIdx] || '' });
+                    }
+                }
+                newData.forEach(newItem => {
+                    const existingIdx = studentDB.findIndex(s => s.id === newItem.id);
+                    if(existingIdx !== -1) studentDB[existingIdx] = newItem; else studentDB.push(newItem);
+                });
+                saveStudentDB();
+                if(statusEl) {
+                    statusEl.innerText = 'อัปเดตสำเร็จ!'; 
+                    statusEl.className = 'font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-200 shadow-sm ml-1';
+                }
+                renderStudentDBTable();
+                Swal.fire({ title: 'สำเร็จ', text: `อัปเดตข้อมูลนักเรียน ${newData.length} รายการแล้ว`, icon: 'success', timer: 1500, showConfirmButton: false });
+            } else {
+                if(statusEl) {
+                    statusEl.innerText = 'ล้มเหลว'; 
+                    statusEl.className = 'font-bold text-red-600 bg-red-50 px-3 py-1 rounded-lg border border-red-200 shadow-sm ml-1';
+                }
+                Swal.fire('ล้มเหลว', 'ไม่สามารถอ่านข้อมูลจากลิงก์ที่ระบุได้ กรุณาตรวจสอบการแชร์ไฟล์', 'error');
+            }
+        }
+
+        async function syncTeacherData(showMsg = true) {
+            const statusEl = document.getElementById('teacherDbStatus');
+            const urlInputElem = document.getElementById('adminTeacherSheetUrl');
+            const urlInput = urlInputElem ? urlInputElem.value.trim() : '';
+            if(urlInput) localStorage.setItem('admin_teacher_sheet_url', urlInput);
+            const url1 = urlInput || 'https://docs.google.com/spreadsheets/d/1rDQNG6vHrxXjFa35XzanimCcTY0TP0xt/export?format=csv&gid=2097434341';
+            const url2 = 'https://docs.google.com/spreadsheets/d/17gf7Mz1klbKMGjMdDRdwq6Fs2ZEjlACpJi4Ss2esbqw/export?format=csv&gid=1457439343';
+            if(statusEl) { statusEl.innerText = 'กำลังดาวน์โหลด...'; statusEl.className = 'font-bold text-yellow-600 bg-yellow-50 px-3 py-1 rounded-lg border border-yellow-200 shadow-sm ml-1'; }
+            
+            try {
+                let newData = [];
+                const rows1 = await fetchCsvFromGoogleSheet(url1);
+                if(rows1 && rows1.length > 1) {
+                    for(let i=1; i<rows1.length; i++) { if(rows1[i][0] && rows1[i][1]) newData.push({ user: rows1[i][0], name: rows1[i][1], dob: rows1[i][2]||'' }); }
+                }
+                const rows2 = await fetchCsvFromGoogleSheet(url2);
+                if(rows2 && rows2.length > 1) {
+                    for(let i=1; i<rows2.length; i++) { if(rows2[i][0] && rows2[i][1]) newData.push({ user: rows2[i][0], name: rows2[i][1], dob: rows2[i][2]||'' }); }
+                }
+
+                if(newData.length > 0) {
+                    newData.forEach(newItem => {
+                        const existingIdx = teacherDB.findIndex(t => t.user === newItem.user);
+                        if(existingIdx !== -1) teacherDB[existingIdx] = newItem; else teacherDB.push(newItem);
+                    });
+                    saveTeacherDB();
+                    if(statusEl) { statusEl.innerText = 'อัปเดตสำเร็จ!'; statusEl.className = 'font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-200 shadow-sm ml-1'; }
+                    renderTeacherDBTable();
+                    if(showMsg) Swal.fire({ title: 'สำเร็จ', text: `อัปเดตบัญชีครู ${newData.length} บัญชีแล้ว`, icon: 'success', timer: 1500, showConfirmButton: false });
+                }
+            } catch(e) {
+                 if(statusEl) { statusEl.innerText = 'ล้มเหลว'; statusEl.className = 'font-bold text-red-600 bg-red-50 px-3 py-1 rounded-lg border border-red-200 shadow-sm ml-1'; }
+                 if(showMsg) Swal.fire('ล้มเหลว', 'ดึงข้อมูลบัญชีครูไม่สำเร็จ', 'error');
+            }
+        }
+
+        function handleAddStudent(e) {
+            e.preventDefault();
+            const newStu = { id: document.getElementById('addStuId').value, name: document.getElementById('addStuName').value, grade: document.getElementById('addStuGrade').value, room: document.getElementById('addStuRoom').value, no: document.getElementById('addStuNo').value };
+            const idx = studentDB.findIndex(s => s.id === newStu.id);
+            if(idx !== -1) studentDB[idx] = newStu; else studentDB.push(newStu);
+            saveStudentDB(); renderStudentDBTable();
+            document.getElementById('addStudentForm').reset();
+            Swal.fire({ title: 'สำเร็จ!', text: 'เพิ่ม/แก้ไขข้อมูลนักเรียนแล้ว', icon: 'success', timer: 1000, showConfirmButton: false });
+        }
+
+        function handleAddTeacher(e) {
+            e.preventDefault();
+            const newTch = { user: document.getElementById('addTchUser') ? document.getElementById('addTchUser').value : document.getElementById('addTeachUser').value, 
+                             name: document.getElementById('addTchName') ? document.getElementById('addTchName').value : document.getElementById('addTeachName').value, 
+                             dob: document.getElementById('addTchPass') ? document.getElementById('addTchPass').value : document.getElementById('addTeachPass').value };
+            const idx = teacherDB.findIndex(t => t.user === newTch.user);
+            if(idx !== -1) teacherDB[idx] = newTch; else teacherDB.push(newTch);
+            saveTeacherDB(); renderTeacherDBTable();
+            document.querySelectorAll('#addTeacherForm').forEach(f => f.reset());
+            Swal.fire({ title: 'สำเร็จ!', text: 'เพิ่มบัญชีครูเรียบร้อย', icon: 'success', timer: 1000, showConfirmButton: false });
+        }
+
+        function deleteStudentDB(id) {
+            Swal.fire({
+                title: 'ยืนยันลบนักเรียน?',
+                text: 'รหัส ' + id,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'ใช่, ลบทิ้ง',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    studentDB = studentDB.filter(s => s.id !== id);
+                    saveStudentDB(); renderStudentDBTable();
+                    Swal.fire({ title: 'ลบแล้ว!', icon: 'success', timer: 1000, showConfirmButton: false });
+                }
+            });
+        }
+
+        function deleteTeacherDB(user) {
+            Swal.fire({
+                title: 'ยืนยันลบบัญชีครู?',
+                text: 'รหัส ' + user,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'ใช่, ลบทิ้ง',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    teacherDB = teacherDB.filter(t => t.user !== user);
+                    saveTeacherDB(); renderTeacherDBTable();
+                    Swal.fire({ title: 'ลบแล้ว!', icon: 'success', timer: 1000, showConfirmButton: false });
+                }
+            });
+        }
+
+        function renderStudentDBTable() {
+            const q = document.getElementById('searchStuDb')?.value.toLowerCase() || '';
+            const tbody = document.getElementById('studentDbTableBody');
+            if(!tbody) return;
+            let filtered = studentDB;
+            if(q) filtered = filtered.filter(s => s.id.includes(q) || s.name.toLowerCase().includes(q));
+            
+            document.getElementById('stuDbCount').innerText = studentDB.length;
+            const limitData = filtered.slice(0, 300);
+            
+            if(!limitData.length) { tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">ไม่พบข้อมูล หรือยังไม่มีการซิงค์ข้อมูล</td></tr>`; return; }
+            tbody.innerHTML = limitData.map(s => `
+                <tr class="hover:bg-blue-50">
+                    <td class="px-4 py-2 text-sm font-bold text-gray-800">${s.id}</td>
+                    <td class="px-4 py-2 text-sm">${s.name}</td>
+                    <td class="px-4 py-2 text-sm text-center">${s.grade}/${s.room}</td>
+                    <td class="px-4 py-2 text-sm text-center">${s.no}</td>
+                    <td class="px-4 py-2 text-sm text-center"><button onclick="deleteStudentDB('${s.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded" title="ลบ"><i class="fas fa-trash-alt"></i></button></td>
+                </tr>
+            `).join('');
+            if(filtered.length > 300) tbody.innerHTML += `<tr><td colspan="5" class="px-4 py-4 text-center text-gray-400 bg-gray-50 text-xs">มีข้อมูลเกิน 300 รายการ โปรดใช้ช่องค้นหา...</td></tr>`;
+        }
+
+        function renderTeacherDBTable() {
+            const q = document.getElementById('searchTchDb')?.value.toLowerCase() || document.getElementById('searchTeachDb')?.value.toLowerCase() || '';
+            const tbodies = [document.getElementById('teacherDbTableBody')];
+            tbodies.forEach(tbody => {
+                if(!tbody) return;
+                let filtered = teacherDB;
+                if(q) filtered = filtered.filter(t => t.user.toLowerCase().includes(q) || t.name.toLowerCase().includes(q));
+                
+                document.querySelectorAll('#tchDbCount, #teachDbCount').forEach(el => el.innerText = teacherDB.length);
+                
+                if(!filtered.length) { tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">ยังไม่มีข้อมูล</td></tr>`; return; }
+                tbody.innerHTML = filtered.map(t => `
+                    <tr class="hover:bg-purple-50">
+                        <td class="px-4 py-2 text-sm font-bold text-purple-700">${t.user}</td>
+                        <td class="px-4 py-2 text-sm font-medium">${t.name}</td>
+                        <td class="px-4 py-2 text-sm text-center tracking-wider">${t.dob}</td>
+                        <td class="px-4 py-2 text-sm text-center"><button onclick="deleteTeacherDB('${t.user}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded" title="ลบ"><i class="fas fa-trash-alt"></i></button></td>
+                    </tr>
+                `).join('');
+            });
+        }
+
+        function updateAppIcon(url) {
+            if (!url) return;
+            let linkIcon = document.querySelector("link[rel~='icon']");
+            if (!linkIcon) { linkIcon = document.createElement('link'); linkIcon.rel = 'icon'; document.head.appendChild(linkIcon); }
+            linkIcon.href = url;
+
+            let linkApple = document.querySelector("link[rel='apple-touch-icon']");
+            if (!linkApple) { linkApple = document.createElement('link'); linkApple.rel = 'apple-touch-icon'; document.head.appendChild(linkApple); }
+            linkApple.href = url;
+            
+            const previewImg = document.getElementById('iconPreviewImage');
+            const placeholder = document.getElementById('iconPreviewPlaceholder');
+            if(previewImg && placeholder) { previewImg.src = url; previewImg.classList.remove('hidden'); placeholder.classList.add('hidden'); }
+        }
+
+        function saveAppIcon() {
+            const url = document.getElementById('adminAppIconUrl').value.trim();
+            if (url) {
+                localStorage.setItem('custom_app_icon', url);
+                updateAppIcon(url);
+                Swal.fire({ title: 'บันทึกสำเร็จ', text: 'อัปเดตไอคอนแอปพลิเคชันแล้ว', icon: 'success', timer: 1500, showConfirmButton: false });
+            } else { Swal.fire('ข้อผิดพลาด', 'กรุณาระบุลิงก์รูปภาพ', 'warning'); }
+        }
+
+        function resetAppIcon() {
+            localStorage.removeItem('custom_app_icon');
+            document.getElementById('adminAppIconUrl').value = '';
+            const previewImg = document.getElementById('iconPreviewImage');
+            const placeholder = document.getElementById('iconPreviewPlaceholder');
+            if(previewImg && placeholder) { previewImg.src = ''; previewImg.classList.add('hidden'); placeholder.classList.remove('hidden'); }
+            
+            let linkIcon = document.querySelector("link[rel~='icon']");
+            if (linkIcon) linkIcon.href = 'data:,';
+            let linkApple = document.querySelector("link[rel='apple-touch-icon']");
+            if (linkApple) linkApple.parentNode.removeChild(linkApple);
+            
+            Swal.fire({ title: 'สำเร็จ', text: 'คืนค่าไอคอนเริ่มต้นแล้ว', icon: 'success', timer: 1500, showConfirmButton: false });
+        }
+
+        function saveAppsScriptUrl() {
+            const url = document.getElementById('appsScriptUrl').value.trim();
+            localStorage.setItem('apps_script_url', url);
+            Swal.fire({title: 'บันทึกสำเร็จ', text: 'บันทึกลิงก์ Web App แล้ว ข้อมูลใหม่จะถูกซิงค์ขึ้น Cloud อัตโนมัติ', icon: 'success', timer: 1500, showConfirmButton: false});
+        }
+
+        function syncToCloud(payload) {
+            const scriptUrl = localStorage.getItem('apps_script_url') || DEFAULT_APPS_SCRIPT_URL;
+            if (!scriptUrl) return;
+            fetch(scriptUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            }).catch(e => console.log("Cloud Sync Background Error", e));
+        }
+
+        async function uploadAllToCloud() {
+            const scriptUrl = localStorage.getItem('apps_script_url') || DEFAULT_APPS_SCRIPT_URL;
+            if (!scriptUrl) { Swal.fire('แจ้งเตือน', 'กรุณาระบุ Web App URL ด้านบนก่อน', 'warning'); return; }
+            
+            Swal.fire({ title: 'กำลังอัปโหลด...', text: 'โปรดรอสักครู่ ห้ามปิดหน้าต่าง', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'syncAll', records: appData })
+                });
+                Swal.fire('สำเร็จ', 'สำรองข้อมูลทั้งหมดขึ้น Cloud เรียบร้อย', 'success');
+            } catch (e) {
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับ Cloud ได้', 'error');
+            }
+        }
+
+        async function downloadFromCloud(silent = false) {
+            const scriptUrl = localStorage.getItem('apps_script_url') || DEFAULT_APPS_SCRIPT_URL;
+            if (!scriptUrl) { 
+                if(!silent) Swal.fire('แจ้งเตือน', 'กรุณาระบุ Web App URL ด้านบนก่อน', 'warning'); 
+                return; 
+            }
+            
+            if(!silent) Swal.fire({ title: 'กำลังดาวน์โหลด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(scriptUrl + "?action=getRecords");
+                const data = await res.json();
+                if (data && Array.isArray(data) && data.length > 0) {
+                    appData = data.map(d => ({ ...d, id: parseInt(d.id) }));
+                    saveData();
+                    renderApp();
+                    if(!silent) Swal.fire('สำเร็จ', `ดาวน์โหลดสำเร็จ ${data.length} รายการ`, 'success');
+                } else {
+                    if(!silent) Swal.fire('สำเร็จ', 'ระบบเชื่อมต่อได้ แต่ยังไม่มีข้อมูลบน Cloud', 'info');
+                }
+            } catch (e) {
+                if(!silent) Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลจาก Cloud ได้ ตรวจสอบ URL อีกครั้ง', 'error');
+            }
+        }
+
         window.onload = function() {
-            initStudentData(); // โหลดข้อมูลหรือดึงจาก Google Sheets
-            loadLastUsedFields(); // โหลดค่าที่เคยกรอกในแบบฟอร์ม
+            const savedStuUrl = localStorage.getItem('admin_student_sheet_url');
+            if(savedStuUrl && document.getElementById('adminSheetUrl')) document.getElementById('adminSheetUrl').value = savedStuUrl;
+            
+            const savedTchUrl = localStorage.getItem('admin_teacher_sheet_url');
+            if(savedTchUrl && document.getElementById('adminTeacherSheetUrl')) document.getElementById('adminTeacherSheetUrl').value = savedTchUrl;
+
+            const savedIcon = localStorage.getItem('custom_app_icon');
+            if(savedIcon) {
+                if(document.getElementById('adminAppIconUrl')) document.getElementById('adminAppIconUrl').value = savedIcon;
+                updateAppIcon(savedIcon);
+            }
+
+            const savedAppsScriptUrl = localStorage.getItem('apps_script_url');
+            if (document.getElementById('appsScriptUrl')) {
+                document.getElementById('appsScriptUrl').value = savedAppsScriptUrl || DEFAULT_APPS_SCRIPT_URL;
+            }
+
             renderApp();
+            applyTermSettingsToForm();
+            restoreFormState();
+            
+            downloadFromCloud(true);
+
+            if (studentDB.length === 0) syncStudentData();
+            if (teacherDB.length === 0) syncTeacherData(false);
+            if (!currentTeacherUser && currentRole === 'teacher') setTimeout(() => promptTeacherLogin(true), 500);
         };
     </script>
 </body>
